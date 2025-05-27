@@ -94,13 +94,11 @@ def generate_visit_predictions(patients):
 
 def generate_disease_predictions(patients):
     """Generate disease predictions and trends"""
-    # Extract conditions from medical history and severity
+    # Extract actual medical conditions from medical history only
     conditions = []
     for patient in patients:
-        if patient.medical_history:
-            conditions.append(patient.medical_history)
-        if patient.condition_severity:
-            conditions.append(patient.condition_severity)
+        if patient.medical_history and patient.medical_history.strip():
+            conditions.append(patient.medical_history.strip())
     
     # Count condition occurrences
     condition_counts = Counter(conditions)
@@ -108,14 +106,16 @@ def generate_disease_predictions(patients):
     # Get top conditions
     top_conditions = condition_counts.most_common(10)
     
-    # Generate trending diseases with mock trend data
+    # Generate trending diseases with actual data
     trending_diseases = []
+    total_cases = len(patients)
     for condition, count in top_conditions[:5]:
-        trend_factor = random.uniform(0.9, 1.2)  # Mock trend
+        percentage = (count / total_cases) * 100 if total_cases > 0 else 0
         trending_diseases.append({
             'name': condition,
             'cases': count,
-            'trend': trend_factor
+            'percentage': round(percentage, 1),
+            'trend': 'increasing' if percentage > 5 else 'stable'
         })
     
     # Prepare distribution data for charts

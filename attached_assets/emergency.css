@@ -1,0 +1,90 @@
+/* Additional styles for the emergency queue page */
+
+.priority-badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+}
+
+.priority-emergency {
+  background-color: var(--error-red);
+  color: white;
+}
+
+.priority-urgent {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.priority-standard {
+  background-color: #0dcaf0;
+  color: #212529;
+}
+
+.priority-routine {
+  background-color: #6c757d;
+  color: white;
+}
+
+.case-count {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-left: 0.75rem;
+}
+
+.emergency-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--error-red);
+}
+
+.next-case-details {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.next-case-details h5 {
+  color: var(--error-red);
+}
+
+.next-case-details hr {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.patient-info-row {
+  margin-bottom: 0.5rem;
+}
+
+.patient-info-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.emergency-table {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.empty-queue-message {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.empty-queue-message i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #adb5bd;
+}
+
+/* Add additional responsiveness */
+@media (max-width: 767.98px) {
+  .priority-badge {
+    min-width: auto;
+  }
+}

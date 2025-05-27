@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Registration | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="mb-4">Patient Registration Form</h1>
+        <p class="lead">Fill out the form below to register a new patient. Required fields are marked with <span class="text-danger">*</span></p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user-plus me-2"></i> New Patient Information
+    </div>
+    <div class="card-body">
+        <form id="patientRegistrationForm" method="POST" action="{{ url_for('register') }}">
+            <!-- Personal Information Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="mb-3">Personal Information</h5>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label required">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" 
+                           value="{{ form_data.name if form_data else '' }}" placeholder="Enter patient's full name" required>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="age" class="form-label required">Age <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="age" name="age" min="1" max="120" 
+                           value="{{ form_data.age if form_data else '' }}" placeholder="Age in years" required>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="gender" class="form-label required">Gender <span class="text-danger">*</span></label>
+                    <select class="form-select" id="gender" name="gender" required>
+                        <option value="" selected disabled>Select gender</option>
+                        <option value="Male" {% if form_data and form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if form_data and form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if form_data and form_data.gender == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="locality" class="form-label">Locality/Address</label>
+                    <textarea class="form-control" id="locality" name="locality" rows="2" 
+                              placeholder="Patient's residential address">{{ form_data.locality if form_data else '' }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Medical Information Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="mb-3">Medical Information</h5>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="condition_severity" class="form-label required">Condition Severity <span class="text-danger">*</span></label>
+                    <select class="form-select" id="condition_severity" name="condition_severity" required>
+                        <option value="" selected disabled>Select severity</option>
+                        <option value="Critical" {% if form_data and form_data.condition_severity == 'Critical' %}selected{% endif %}>Critical</option>
+                        <option value="High" {% if form_data and form_data.condition_severity == 'High' %}selected{% endif %}>High</option>
+                        <option value="Severe" {% if form_data and form_data.condition_severity == 'Severe' %}selected{% endif %}>Severe</option>
+                        <option value="Moderate" {% if form_data and form_data.condition_severity == 'Moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="Mild" {% if form_data and form_data.condition_severity == 'Mild' %}selected{% endif %}>Mild</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="priority_level" class="form-label">Priority Level</label>
+                    <select class="form-select" id="priority_level" name="priority_level">
+                        <option value="" selected disabled>Select priority</option>
+                        <option value="Emergency" {% if form_data and form_data.priority_level == 'Emergency' %}selected{% endif %}>Emergency</option>
+                        <option value="Urgent" {% if form_data and form_data.priority_level == 'Urgent' %}selected{% endif %}>Urgent</option>
+                        <option value="Standard" {% if form_data and form_data.priority_level == 'Standard' %}selected{% endif %}>Standard</option>
+                        <option value="Routine" {% if form_data and form_data.priority_level == 'Routine' %}selected{% endif %}>Routine</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 mb-3">
+                    <label for="medical_history" class="form-label">Medical History</label>
+                    <textarea class="form-control" id="medical_history" name="medical_history" rows="3" 
+                              placeholder="Any relevant medical history, allergies, or previous conditions">{{ form_data.medical_history if form_data else '' }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Billing Information Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="mb-3">Billing Information</h5>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="bill_amount" class="form-label required">Bill Amount (₹) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="bill_amount" name="bill_amount" 
+                           value="{{ form_data.bill_amount if form_data else '' }}" placeholder="0.00" required>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="amount_paid" class="form-label">Amount Paid (₹)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="amount_paid" name="amount_paid" 
+                           value="{{ form_data.amount_paid if form_data else '0.00' }}" placeholder="0.00">
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="outstanding_amount" class="form-label">Outstanding Amount (₹)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="outstanding_amount" name="outstanding_amount" 
+                           value="{{ form_data.outstanding_amount if form_data else '' }}" placeholder="0.00" readonly>
+                    <div class="form-text">Automatically calculated</div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="payment_status" class="form-label">Payment Status</label>
+                    <select class="form-select" id="payment_status" name="payment_status">
+                        <option value="Unpaid" {% if form_data and form_data.payment_status == 'Unpaid' %}selected{% endif %}>Unpaid</option>
+                        <option value="Partially Paid" {% if form_data and form_data.payment_status == 'Partially Paid' %}selected{% endif %}>Partially Paid</option>
+                        <option value="Fully Paid" {% if form_data and form_data.payment_status == 'Fully Paid' %}selected{% endif %}>Fully Paid</option>
+                        <option value="Not Applicable" {% if form_data and form_data.payment_status == 'Not Applicable' %}selected{% endif %}>Not Applicable</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-8 mb-3">
+                    <label class="form-label d-block">Insurance Coverage</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="insurance_coverage" id="insurance_coverage_yes" value="Yes" 
+                               {% if form_data and form_data.insurance_coverage == 'Yes' %}checked{% endif %}>
+                        <label class="form-check-label" for="insurance_coverage_yes">Yes</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="insurance_coverage" id="insurance_coverage_no" value="No" 
+                               {% if not form_data or form_data.insurance_coverage != 'Yes' %}checked{% endif %}>
+                        <label class="form-check-label" for="insurance_coverage_no">No</label>
+                    </div>
+                </div>
+                
+                <div class="col-12 mb-3" id="insurance_details_container">
+                    <label for="insurance_details" class="form-label">Insurance Details</label>
+                    <textarea class="form-control" id="insurance_details" name="insurance_details" rows="2" 
+                              placeholder="Provider name, policy number, coverage details, etc.">{{ form_data.insurance_details if form_data else '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Register Patient
+                    </button>
+                    <button type="reset" class="btn btn-secondary ms-2">
+                        <i class="fas fa-undo me-2"></i> Reset Form
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/validation.js') }}"></script>
+{% endblock %}

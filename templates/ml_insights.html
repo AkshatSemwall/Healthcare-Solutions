@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block title %}ML Insights | Healthcare Solutions{% endblock %}
+
+{% block extra_css %}
+<style>
+  .insight-card {
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    height: 100%;
+    border-left: 4px solid var(--bs-primary);
+  }
+  
+  .insight-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .prediction-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--bs-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  .prediction-label {
+    color: var(--bs-secondary);
+    font-size: 0.9rem;
+  }
+  
+  .chart-container {
+    height: 280px;
+    width: 100%;
+    position: relative;
+  }
+  
+  .disease-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+  }
+  
+  .disease-item:last-child {
+    border-bottom: none;
+  }
+  
+  .disease-name {
+    font-weight: 500;
+  }
+  
+  .disease-trend {
+    display: flex;
+    align-items: center;
+  }
+  
+  .disease-cases {
+    margin-right: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .trend-up {
+    color: var(--bs-warning);
+  }
+  
+  .trend-down {
+    color: var(--bs-success);
+  }
+  
+  .ml-explanation {
+    background-color: var(--bs-light);
+    border-radius: var(--bs-border-radius);
+    padding: 1.25rem;
+    font-size: 0.9rem;
+    margin-top: 2rem;
+  }
+  
+  .heading-with-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .info-icon {
+    margin-left: 0.5rem;
+    color: var(--bs-info);
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <div class="heading-with-info">
+      <h1>ML Insights & Predictions</h1>
+      <i class="fas fa-info-circle info-icon" data-bs-toggle="tooltip" title="These insights are generated using machine learning algorithms to predict patient trends and disease patterns"></i>
+    </div>
+    <p class="lead">AI-powered analytics to help optimize hospital operations and resource allocation.</p>
+  </div>
+</div>
+
+<!-- Visit Predictions Section -->
+<div class="row mb-4">
+  <div class="col-lg-4 mb-4">
+    <div class="card insight-card">
+      <div class="card-body text-center">
+        <h5 class="mb-3">Predicted Tomorrow's Visits</h5>
+        <div class="prediction-number">{{ insights.visit_predictions.next_day_visits }}</div>
+        <p class="prediction-label">Expected patients</p>
+        
+        <hr>
+        
+        <div class="mt-3">
+          <p class="mb-1">Recommended staffing:</p>
+          <ul class="text-start">
+            <li>{{ (insights.visit_predictions.next_day_visits / 5)|round|int }} attending physicians</li>
+            <li>{{ (insights.visit_predictions.next_day_visits / 3)|round|int }} nurses</li>
+            <li>{{ (insights.visit_predictions.next_day_visits / 10)|round|int }} admin staff</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-8 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-line me-2"></i> Patient Visit Trends (Last 14 Days)
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="visitTrendsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Disease Prediction Section -->
+<div class="row mb-4">
+  <div class="col-lg-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-pie me-2"></i> Disease Distribution
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="diseaseDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-viruses me-2"></i> Trending Health Conditions
+      </div>
+      <div class="card-body">
+        {% if insights.disease_predictions.trending_diseases %}
+          {% for disease in insights.disease_predictions.trending_diseases %}
+            <div class="disease-item">
+              <div class="disease-name">{{ disease.name }}</div>
+              <div class="disease-trend">
+                <div class="disease-cases">{{ disease.cases }} cases</div>
+                {% if disease.trend > 1.05 %}
+                  <span class="trend-up" data-bs-toggle="tooltip" title="Trending up"><i class="fas fa-arrow-up"></i></span>
+                {% elif disease.trend < 0.95 %}
+                  <span class="trend-down" data-bs-toggle="tooltip" title="Trending down"><i class="fas fa-arrow-down"></i></span>
+                {% else %}
+                  <span data-bs-toggle="tooltip" title="Stable"><i class="fas fa-equals"></i></span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+          
+          <div class="mt-3">
+            <p class="mb-0 text-muted small">
+              <i class="fas fa-info-circle me-1"></i> 
+              Recommended to stock medications and allocate resources for these trending conditions.
+            </p>
+          </div>
+        {% else %}
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No disease trend data available.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ML Explanation Section -->
+<div class="ml-explanation">
+  <h5><i class="fas fa-robot me-2"></i> How These Predictions Work</h5>
+  <p>Our machine learning system analyzes historical patient data to identify patterns and make predictions about future hospital operations:</p>
+  <div class="row">
+    <div class="col-md-6">
+      <h6><i class="fas fa-users me-1"></i> Visit Forecasting:</h6>
+      <ul>
+        <li>Uses time-series analysis on historical admission patterns</li>
+        <li>Accounts for day-of-week variations and seasonal trends</li>
+        <li>Updates daily to improve accuracy</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h6><i class="fas fa-heartbeat me-1"></i> Disease Prediction:</h6>
+      <ul>
+        <li>Analyzes patient medical history and diagnoses</li>
+        <li>Identifies emerging health condition patterns</li>
+        <li>Helps with inventory management and staff training needs</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+  
+    // Visit Trends Chart
+    const visitCtx = document.getElementById('visitTrendsChart').getContext('2d');
+    const visitData = {
+      labels: {{ insights.visit_predictions.trends.dates|tojson }},
+      datasets: [
+        {
+          label: 'Actual Visits',
+          data: {{ insights.visit_predictions.trends.actual_visits|tojson }},
+          borderColor: 'rgba(0, 123, 255, 1)',
+          backgroundColor: 'rgba(0, 123, 255, 0.1)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.3
+        },
+        {
+          label: 'Trend Line',
+          data: {{ insights.visit_predictions.trends.trend_line|tojson }},
+          borderColor: 'rgba(255, 111, 0, 0.8)',
+          borderWidth: 2,
+          backgroundColor: 'transparent',
+          pointRadius: 0,
+          borderDash: [5, 5],
+          tension: 0.3,
+          fill: false
+        }
+      ]
+    };
+    
+    new Chart(visitCtx, {
+      type: 'line',
+      data: visitData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          },
+          legend: {
+            position: 'top',
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Patients'
+            }
+          }
+        }
+      }
+    });
+    
+    // Disease Distribution Chart
+    const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
+    const diseaseData = {
+      labels: {{ insights.disease_predictions.distribution.diseases|tojson }},
+      datasets: [{
+        label: 'Cases',
+        data: {{ insights.disease_predictions.distribution.counts|tojson }},
+        backgroundColor: [
+          'rgba(0, 123, 255, 0.7)',
+          'rgba(40, 167, 69, 0.7)',
+          'rgba(255, 193, 7, 0.7)',
+          'rgba(220, 53, 69, 0.7)',
+          'rgba(23, 162, 184, 0.7)',
+          'rgba(111, 66, 193, 0.7)',
+          'rgba(255, 111, 0, 0.7)',
+          'rgba(32, 201, 151, 0.7)',
+          'rgba(119, 131, 143, 0.7)',
+          'rgba(142, 68, 173, 0.7)'
+        ],
+        borderWidth: 1
+      }]
+    };
+    
+    new Chart(diseaseCtx, {
+      type: 'doughnut',
+      data: diseaseData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 12,
+              padding: 15
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

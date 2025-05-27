@@ -1,0 +1,463 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing Dashboard | Hospital Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+  .billing-stat-card {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+    color: white;
+    border-radius: var(--bs-border-radius);
+    padding: 1.5rem;
+    height: 100%;
+    transition: transform 0.2s;
+  }
+  
+  .billing-stat-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .billing-stat-card.danger {
+    background: linear-gradient(135deg, var(--bs-danger), #ff6b6b);
+  }
+  
+  .billing-stat-card.success {
+    background: linear-gradient(135deg, var(--bs-success), #51cf66);
+  }
+  
+  .billing-stat-card.warning {
+    background: linear-gradient(135deg, var(--bs-warning), #ffd43b);
+  }
+  
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+  
+  .quick-actions {
+    background-color: var(--bs-light);
+    border-radius: var(--bs-border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .payment-status-paid {
+    color: var(--bs-success);
+    font-weight: 600;
+  }
+  
+  .payment-status-partial {
+    color: var(--bs-warning);
+    font-weight: 600;
+  }
+  
+  .payment-status-unpaid {
+    color: var(--bs-danger);
+    font-weight: 600;
+  }
+  
+  .outstanding-amount {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+  }
+  
+  .recent-transactions {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .transaction-item {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding: 0.75rem 0;
+  }
+  
+  .transaction-item:last-child {
+    border-bottom: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="mb-4">Billing Dashboard</h1>
+    <p class="lead">Monitor financial performance and manage patient billing efficiently.</p>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+  <h5 class="mb-3"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+  <div class="row">
+    <div class="col-md-3 mb-2">
+      <a href="{{ url_for('financial_report') }}" class="btn btn-primary w-100">
+        <i class="fas fa-file-invoice-dollar me-2"></i>Generate Financial Report
+      </a>
+    </div>
+    <div class="col-md-3 mb-2">
+      <a href="{{ url_for('download_report_data_csv') }}" class="btn btn-success w-100">
+        <i class="fas fa-file-csv me-2"></i>Export Billing Data
+      </a>
+    </div>
+    <div class="col-md-3 mb-2">
+      <a href="{{ url_for('patients') }}?status=Active" class="btn btn-info w-100">
+        <i class="fas fa-users me-2"></i>Active Patients
+      </a>
+    </div>
+    <div class="col-md-3 mb-2">
+      <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#bulkPaymentModal">
+        <i class="fas fa-credit-card me-2"></i>Bulk Payment Update
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Statistics -->
+<div class="row mb-4">
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="billing-stat-card">
+      <div class="stat-value">₹{{ '{:,.2f}'.format(stats.total_revenue) }}</div>
+      <div class="stat-label">
+        <i class="fas fa-rupee-sign me-1"></i> Total Revenue
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="billing-stat-card danger">
+      <div class="stat-value">₹{{ '{:,.2f}'.format(stats.total_outstanding) }}</div>
+      <div class="stat-label">
+        <i class="fas fa-exclamation-triangle me-1"></i> Outstanding Amount
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="billing-stat-card success">
+      <div class="stat-value">{{ '{:.1f}'.format(stats.collection_rate) }}%</div>
+      <div class="stat-label">
+        <i class="fas fa-percentage me-1"></i> Collection Rate
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="billing-stat-card warning">
+      <div class="stat-value">{{ stats.unpaid_count + stats.partially_paid_count }}</div>
+      <div class="stat-label">
+        <i class="fas fa-clock me-1"></i> Pending Payments
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Status Breakdown -->
+<div class="row mb-4">
+  <div class="col-lg-8 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-pie me-2"></i> Payment Status Breakdown
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <div class="border rounded p-3">
+              <h4 class="text-success">{{ stats.fully_paid_count }}</h4>
+              <small class="text-muted">Fully Paid</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="border rounded p-3">
+              <h4 class="text-warning">{{ stats.partially_paid_count }}</h4>
+              <small class="text-muted">Partially Paid</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="border rounded p-3">
+              <h4 class="text-danger">{{ stats.unpaid_count }}</h4>
+              <small class="text-muted">Unpaid</small>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="border rounded p-3">
+              <h4 class="text-primary">{{ stats.total_patients }}</h4>
+              <small class="text-muted">Total Patients</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Collection Progress -->
+        <div class="mt-4">
+          <label class="form-label">Overall Collection Progress</label>
+          <div class="progress" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 style="width: {{ stats.collection_rate }}%;" 
+                 aria-valuenow="{{ stats.collection_rate }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+              {{ '{:.1f}'.format(stats.collection_rate) }}%
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-2">
+            <small class="text-muted">₹{{ '{:,.2f}'.format(stats.total_paid) }} collected</small>
+            <small class="text-muted">₹{{ '{:,.2f}'.format(stats.total_billed) }} total billed</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-exclamation-circle me-2"></i> Outstanding Summary
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span>Unpaid Bills:</span>
+            <span class="text-danger fw-bold">₹{{ '{:,.2f}'.format(stats.unpaid_amount) }}</span>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span>Overdue Amount:</span>
+            <span class="text-warning fw-bold">₹{{ '{:,.2f}'.format(stats.overdue_amount) }}</span>
+          </div>
+        </div>
+        <hr>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span class="fw-bold">Total Outstanding:</span>
+            <span class="text-danger fw-bold">₹{{ '{:,.2f}'.format(stats.total_outstanding) }}</span>
+          </div>
+        </div>
+        
+        {% if stats.total_outstanding > 0 %}
+          <div class="mt-3">
+            <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#followUpModal">
+              <i class="fas fa-phone me-2"></i> Generate Follow-up List
+            </button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Billing Activity -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-receipt me-2"></i> Recent Billing Activity
+          </div>
+          <div>
+            <a href="{{ url_for('patients') }}" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-eye me-1"></i> View All Patients
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if patients %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Name</th>
+                  <th>Bill Amount</th>
+                  <th>Amount Paid</th>
+                  <th>Outstanding</th>
+                  <th>Payment Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for patient in patients %}
+                <tr>
+                  <td>
+                    <span class="font-monospace">{{ patient.patient_id }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ patient.name }}</strong>
+                    <br><small class="text-muted">{{ patient.condition_severity }} severity</small>
+                  </td>
+                  <td>₹{{ '{:,.2f}'.format(patient.bill_amount) }}</td>
+                  <td class="payment-status-paid">₹{{ '{:,.2f}'.format(patient.amount_paid) }}</td>
+                  <td>
+                    {% if patient.outstanding_amount > 0 %}
+                      <span class="outstanding-amount text-danger">₹{{ '{:,.2f}'.format(patient.outstanding_amount) }}</span>
+                    {% else %}
+                      <span class="text-success">₹0.00</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge 
+                      {% if patient.payment_status == 'Fully Paid' %}bg-success
+                      {% elif patient.payment_status == 'Partially Paid' %}bg-warning text-dark
+                      {% elif patient.payment_status == 'Unpaid' %}bg-danger
+                      {% else %}bg-secondary{% endif %}">
+                      {{ patient.payment_status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <a href="{{ url_for('patient_detail', patient_id=patient.patient_id) }}" 
+                         class="btn btn-outline-primary" title="View Details">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      {% if patient.outstanding_amount > 0 %}
+                        <button type="button" class="btn btn-outline-success" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#paymentModal" 
+                                data-patient-id="{{ patient.patient_id }}"
+                                data-patient-name="{{ patient.name }}"
+                                data-outstanding="{{ patient.outstanding_amount }}"
+                                title="Record Payment">
+                          <i class="fas fa-dollar-sign"></i>
+                        </button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+            <h5>No Billing Records</h5>
+            <p class="text-muted">No patients with billing information found.</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary">
+              <i class="fas fa-user-plus me-1"></i> Register New Patient
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="paymentForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <p class="form-control-plaintext" id="modalPatientName"></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Outstanding Amount</label>
+            <p class="form-control-plaintext text-danger fw-bold" id="modalOutstanding"></p>
+          </div>
+          <div class="mb-3">
+            <label for="paymentAmount" class="form-label">Payment Amount (₹)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" 
+                   id="paymentAmount" name="payment_amount" required>
+            <div class="form-text">Enter the amount being paid</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check me-1"></i> Record Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Follow-up Modal -->
+<div class="modal fade" id="followUpModal" tabindex="-1" aria-labelledby="followUpModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="followUpModalLabel">Payment Follow-up Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>This feature will generate a follow-up report for patients with outstanding payments.</p>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Feature coming soon: Automated follow-up lists with patient contact information and payment reminders.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Payment Modal -->
+<div class="modal fade" id="bulkPaymentModal" tabindex="-1" aria-labelledby="bulkPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bulkPaymentModalLabel">Bulk Payment Update</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>This feature will allow batch updates for multiple patient payments.</p>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Feature coming soon: Upload CSV files or process multiple payments simultaneously.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Payment Modal Handler
+  const paymentModal = document.getElementById('paymentModal');
+  const paymentForm = document.getElementById('paymentForm');
+  
+  if (paymentModal) {
+    paymentModal.addEventListener('show.bs.modal', function(event) {
+      const button = event.relatedTarget;
+      const patientId = button.getAttribute('data-patient-id');
+      const patientName = button.getAttribute('data-patient-name');
+      const outstanding = button.getAttribute('data-outstanding');
+      
+      // Update modal content
+      document.getElementById('modalPatientName').textContent = patientName;
+      document.getElementById('modalOutstanding').textContent = '₹' + parseFloat(outstanding).toLocaleString();
+      
+      // Set form action
+      paymentForm.action = `/update_payment/${patientId}`;
+      
+      // Set max payment amount
+      const paymentAmountInput = document.getElementById('paymentAmount');
+      paymentAmountInput.max = outstanding;
+      paymentAmountInput.value = '';
+      paymentAmountInput.focus();
+    });
+  }
+});
+</script>
+{% endblock %}

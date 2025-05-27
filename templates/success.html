@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Registration Successful | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i> Registration Successful
+            </div>
+            <div class="card-body text-center">
+                <div class="success-icon mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                
+                <h3 class="mb-4">Patient Registration Completed</h3>
+                
+                <p class="lead">Thank you! <strong>{{ patient_name }}</strong> has been successfully registered in the system.</p>
+                
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-id-card me-2"></i>Patient ID</h5>
+                    <h3 class="text-primary">{{ patient_id }}</h3>
+                </div>
+                
+                <p>Please make a note of this ID for future reference. This ID will be required for all future interactions with the hospital.</p>
+                
+                <hr class="my-4">
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-user-plus me-2"></i> Register Another Patient
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i> Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

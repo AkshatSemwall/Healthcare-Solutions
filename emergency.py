@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash
 from app import app
-from utils import get_emergency_cases, load_patients_from_csv, save_patient_to_csv, generate_patient_id
-from models import Patient
+from utils import get_emergency_cases, load_patients_from_csv, save_patient_to_csv, generate_patient_id, save_emergency_case_to_csv, remove_emergency_case_from_csv, get_next_emergency_case
+from models import Patient, EmergencyCase
 from datetime import datetime
 import logging
 
@@ -34,51 +34,37 @@ def add_emergency():
             flash('Please fill in all required fields.', 'error')
             return redirect(url_for('emergency'))
         
-        # Validate patient ID format
-        if not patient_id.startswith('HMS-'):
-            flash('Invalid Patient ID format. Use HMS-YYYY-XXXXXXXX format.', 'error')
-            return redirect(url_for('emergency'))
+        # If no patient ID provided, generate one
+        if not patient_id:
+            patient_id = generate_patient_id()
         
-        # Check if patient already exists
-        patients = load_patients_from_csv()
-        existing_patient = next((p for p in patients if p.patient_id == patient_id), None)
+        # Priority level mapping
+        priority_levels = {
+            'Emergency': 1,
+            'Urgent': 2, 
+            'Standard': 3,
+            'Routine': 4
+        }
         
-        if existing_patient:
-            # Update existing patient for emergency
-            existing_patient.condition_severity = priority
-            existing_patient.medical_history = condition
-            existing_patient.discharge_date = None  # Mark as not discharged
-            existing_patient.timestamp = datetime.now().isoformat()
-            
-            # Re-save all patients (simple approach for CSV)
-            # In production, this would be more efficient with database updates
-            flash('Patient updated and added to emergency queue.', 'success')
+        priority_level = priority_levels.get(priority, 4)
+        
+        # Create emergency case
+        emergency_case = EmergencyCase(
+            patient_id=patient_id,
+            name=name,
+            condition=condition,
+            priority=priority,
+            priority_level=priority_level,
+            priority_name=priority,
+            time_added=datetime.now().isoformat(),
+            formatted_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        )
+        
+        # Save to emergency CSV
+        if save_emergency_case_to_csv(emergency_case):
+            flash(f'Emergency case for {name} added successfully to the queue.', 'success')
         else:
-            # Create new emergency patient
-            patient = Patient(
-                patient_id=patient_id,
-                name=name,
-                age=0,  # Will be updated later
-                gender='',
-                locality='',
-                condition_severity=priority,
-                priority_level=priority,
-                medical_history=condition,
-                bill_amount=0.0,
-                amount_paid=0.0,
-                outstanding_amount=0.0,
-                payment_status='Unpaid',
-                insurance_coverage='No',
-                insurance_details='',
-                admission_date=datetime.now().strftime('%Y-%m-%d'),
-                discharge_date=None,
-                timestamp=datetime.now().isoformat()
-            )
-            
-            if save_patient_to_csv(patient):
-                flash('Emergency case added successfully.', 'success')
-            else:
-                flash('Error adding emergency case.', 'error')
+            flash('Error adding emergency case to the queue.', 'error')
         
         return redirect(url_for('emergency'))
         
@@ -100,44 +86,11 @@ def process_next_emergency():
         # Get the highest priority case
         next_case = cases[0]
         
-        # Load all patients and find the one to update
-        patients = load_patients_from_csv()
-        patient_to_update = next((p for p in patients if p.patient_id == next_case.patient_id), None)
-        
-        if patient_to_update:
-            # Mark as discharged (processed)
-            patient_to_update.discharge_date = datetime.now().strftime('%Y-%m-%d')
-            
-            # For simplicity, we'll recreate the CSV file
-            # In production, use a database for better performance
-            import os
-            import csv
-            
-            # Backup and rewrite CSV
-            with open('patient_records_with_timestamp.csv', 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    'patient_id', 'name', 'age', 'gender', 'locality',
-                    'condition_severity', 'priority_level', 'medical_history',
-                    'bill_amount', 'amount_paid', 'outstanding_amount',
-                    'payment_status', 'insurance_coverage', 'insurance_details',
-                    'admission_date', 'discharge_date', 'timestamp'
-                ])
-                
-                for patient in patients:
-                    writer.writerow([
-                        patient.patient_id, patient.name, patient.age, patient.gender,
-                        patient.locality, patient.condition_severity, patient.priority_level,
-                        patient.medical_history, patient.bill_amount, patient.amount_paid,
-                        patient.outstanding_amount, patient.payment_status,
-                        patient.insurance_coverage, patient.insurance_details,
-                        patient.admission_date, patient.discharge_date or '',
-                        patient.timestamp or datetime.now().isoformat()
-                    ])
-            
-            flash(f'Emergency case for {next_case.name} has been processed.', 'success')
+        # Remove the case from emergency queue
+        if remove_emergency_case_from_csv(next_case.patient_id):
+            flash(f'Emergency case for {next_case.name} ({next_case.condition}) has been processed and removed from the queue.', 'success')
         else:
-            flash('Error finding patient to process.', 'error')
+            flash('Error processing emergency case.', 'error')
         
         return redirect(url_for('emergency'))
         

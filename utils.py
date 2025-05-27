@@ -108,41 +108,140 @@ def generate_patient_id() -> str:
     return f"HMS-{year}-{unique_part}"
 
 def get_emergency_cases() -> List[EmergencyCase]:
-    """Get all emergency cases (High/Critical severity with no discharge date)"""
-    patients = load_patients_from_csv()
+    """Get all emergency cases from dedicated emergency CSV file"""
     emergency_cases = []
+    emergency_csv_path = "emergency_cases.csv"
     
-    priority_mapping = {
-        'Emergency': (1, 'Emergency'),
-        'Critical': (1, 'Emergency'),
-        'High': (2, 'Urgent'),
-        'Urgent': (2, 'Urgent'),
-        'Severe': (2, 'Urgent'),
-        'Moderate': (3, 'Standard'),
-        'Standard': (3, 'Standard'),
-        'Mild': (4, 'Routine'),
-        'Routine': (4, 'Routine')
-    }
+    try:
+        # First try to load from dedicated emergency CSV
+        with open(emergency_csv_path, 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
+                    priority_level = int(row.get('priority_level', 4))
+                    case = EmergencyCase(
+                        patient_id=row.get('patient_id', ''),
+                        name=row.get('name', ''),
+                        condition=row.get('condition', ''),
+                        priority=row.get('priority', 'Standard'),
+                        priority_level=priority_level,
+                        priority_name=row.get('priority', 'Standard'),
+                        time_added=row.get('time_added', ''),
+                        formatted_time=format_timestamp(row.get('time_added', ''))
+                    )
+                    emergency_cases.append(case)
+                except (ValueError, TypeError) as e:
+                    logging.error(f"Error processing emergency case row: {e}")
+                    continue
+        
+        # Sort by priority level (1 = highest priority) and time added
+        emergency_cases.sort(key=lambda x: (x.priority_level, x.time_added))
+        
+    except FileNotFoundError:
+        # If emergency CSV doesn't exist, fall back to patient data
+        logging.info("Emergency CSV not found, using patient data for emergency cases")
+        patients = load_patients_from_csv()
+        
+        priority_mapping = {
+            'Emergency': (1, 'Emergency'),
+            'Critical': (1, 'Emergency'),
+            'High': (2, 'Urgent'),
+            'Urgent': (2, 'Urgent'),
+            'Severe': (2, 'Urgent'),
+            'Moderate': (3, 'Standard'),
+            'Standard': (3, 'Standard'),
+            'Mild': (4, 'Routine'),
+            'Routine': (4, 'Routine')
+        }
+        
+        for patient in patients:
+            if patient.is_emergency:
+                priority_info = priority_mapping.get(patient.condition_severity, (4, 'Routine'))
+                
+                case = EmergencyCase(
+                    patient_id=patient.patient_id,
+                    name=patient.name,
+                    condition=patient.medical_history or f"{patient.condition_severity} condition",
+                    priority=patient.condition_severity,
+                    priority_level=priority_info[0],
+                    priority_name=priority_info[1],
+                    time_added=patient.timestamp or patient.admission_date,
+                    formatted_time=format_timestamp(patient.timestamp or patient.admission_date)
+                )
+                emergency_cases.append(case)
+        
+        emergency_cases.sort(key=lambda x: x.priority_level)
     
-    for patient in patients:
-        if patient.is_emergency:
-            priority_info = priority_mapping.get(patient.condition_severity, (4, 'Routine'))
-            
-            case = EmergencyCase(
-                patient_id=patient.patient_id,
-                name=patient.name,
-                condition=patient.medical_history or f"{patient.condition_severity} condition",
-                priority=patient.condition_severity,
-                priority_level=priority_info[0],
-                priority_name=priority_info[1],
-                time_added=patient.timestamp or patient.admission_date,
-                formatted_time=format_timestamp(patient.timestamp or patient.admission_date)
-            )
-            emergency_cases.append(case)
+    except Exception as e:
+        logging.error(f"Error reading emergency cases: {e}")
     
-    # Sort by priority level (1 = highest priority)
-    emergency_cases.sort(key=lambda x: x.priority_level)
     return emergency_cases
+
+def save_emergency_case_to_csv(case: EmergencyCase) -> bool:
+    """Save an emergency case to the emergency CSV file"""
+    try:
+        emergency_csv_path = "emergency_cases.csv"
+        file_exists = os.path.exists(emergency_csv_path)
+        
+        with open(emergency_csv_path, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            
+            # Write header if file is new
+            if not file_exists:
+                writer.writerow([
+                    'patient_id', 'name', 'condition', 'priority', 
+                    'priority_level', 'time_added'
+                ])
+            
+            # Write emergency case data
+            writer.writerow([
+                case.patient_id, case.name, case.condition, 
+                case.priority, case.priority_level, case.time_added
+            ])
+        
+        return True
+    except Exception as e:
+        logging.error(f"Error saving emergency case to CSV: {e}")
+        return False
+
+def remove_emergency_case_from_csv(patient_id: str) -> bool:
+    """Remove an emergency case from the CSV file"""
+    try:
+        emergency_csv_path = "emergency_cases.csv"
+        if not os.path.exists(emergency_csv_path):
+            return False
+        
+        # Read all cases except the one to remove
+        remaining_cases = []
+        with open(emergency_csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('patient_id') != patient_id:
+                    remaining_cases.append(row)
+        
+        # Rewrite the file with remaining cases
+        with open(emergency_csv_path, 'w', newline='', encoding='utf-8') as f:
+            if remaining_cases:
+                fieldnames = ['patient_id', 'name', 'condition', 'priority', 'priority_level', 'time_added']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(remaining_cases)
+            else:
+                # Write just the header if no cases remain
+                writer = csv.writer(f)
+                writer.writerow(['patient_id', 'name', 'condition', 'priority', 'priority_level', 'time_added'])
+        
+        return True
+    except Exception as e:
+        logging.error(f"Error removing emergency case from CSV: {e}")
+        return False
+
+def get_next_emergency_case():
+    """Get the next highest priority emergency case"""
+    cases = get_emergency_cases()
+    if cases:
+        return cases[0]  # First case is highest priority due to sorting
+    return None
 
 def format_timestamp(timestamp_str: str) -> str:
     """Format timestamp for display"""

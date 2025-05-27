@@ -30,7 +30,7 @@ def add_emergency():
         condition = request.form.get('condition', '').strip()
         
         # Validate required fields
-        if not all([patient_id, name, priority, condition]):
+        if not all([name, priority, condition]):
             flash('Please fill in all required fields.', 'error')
             return redirect(url_for('emergency'))
         

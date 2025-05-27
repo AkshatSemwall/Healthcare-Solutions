@@ -24,15 +24,15 @@
                 <form id="emergencyForm" method="POST" action="{{ url_for('add_emergency') }}">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="patient_id" class="form-label required">Patient ID</label>
+                            <label for="patient_id" class="form-label">Patient ID (Optional)</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="patient_id" name="patient_id" required
-                                       placeholder="HMS-YYYY-XXXXXXXX">
+                                <input type="text" class="form-control" id="patient_id" name="patient_id"
+                                       placeholder="HMS-YYYY-XXXXXXXX or leave blank to generate">
                                 <button class="btn btn-outline-secondary" type="button" id="searchPatientBtn">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
-                            <div class="form-text">Enter an existing patient ID or search</div>
+                            <div class="form-text">Enter an existing patient ID or leave blank to auto-generate</div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="name" class="form-label required">Patient Name</label>
@@ -160,16 +160,16 @@ document.addEventListener('DOMContentLoaded', function() {
     emergencyForm.addEventListener('submit', function(event) {
         let isValid = true;
         
-        // Validate Patient ID format
+        // Validate Patient ID format only if provided
         const patientIdInput = document.getElementById('patient_id');
         const patientIdPattern = /^HMS-\d{4}-[a-zA-Z0-9]{8}$/;
         
-        if (!patientIdPattern.test(patientIdInput.value)) {
-            alert('Please enter a valid Patient ID in the format HMS-YYYY-XXXXXXXX');
+        if (patientIdInput.value.trim() && !patientIdPattern.test(patientIdInput.value)) {
+            alert('Please enter a valid Patient ID in the format HMS-YYYY-XXXXXXXX or leave blank to auto-generate');
             isValid = false;
         }
         
-        // Check all required fields
+        // Check required fields (excluding patient_id which is now optional)
         const requiredFields = emergencyForm.querySelectorAll('[required]');
         requiredFields.forEach(field => {
             if (!field.value.trim()) {

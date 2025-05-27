@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ report.title }} | Healthcare Solutions{% endblock %}
+
+{% block extra_css %}
+<style>
+  .report-header {
+    background-color: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+  }
+  
+  .report-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary-blue);
+  }
+  
+  .report-timestamp {
+    color: var(--text-muted);
+  }
+  
+  .summary-stat {
+    background-color: white;
+    padding: 1.25rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  
+  .summary-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  
+  .print-only {
+    display: none;
+  }
+  
+  @media print {
+    body {
+      font-size: 12pt;
+    }
+    
+    .no-print {
+      display: none;
+    }
+    
+    .print-only {
+      display: block;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .report-header {
+      background-color: transparent;
+      border-bottom: 2px solid #dee2e6;
+      border-radius: 0;
+      padding: 1rem 0;
+    }
+    
+    .card {
+      border: 1px solid #dee2e6;
+      box-shadow: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Print Header (only visible when printing) -->
+<div class="print-only">
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <h1>HealthCare Solutions</h1>
+      <p>123 Medical Drive, Suite 200, Boston, MA 02115</p>
+    </div>
+  </div>
+</div>
+
+<!-- Report Header -->
+<div class="report-header">
+  <div class="row">
+    <div class="col-md-8">
+      <h1 class="report-title">{{ report.title }}</h1>
+      <p class="report-timestamp">Generated on: {{ report.generated_at }}</p>
+    </div>
+    <div class="col-md-4 text-md-end no-print">
+      <button onclick="window.print();" class="btn btn-primary">
+        <i class="fas fa-print me-2"></i> Print Report
+      </button>
+      <a href="{{ url_for('download_report_data_csv') }}" class="btn btn-outline-primary ms-2">
+        <i class="fas fa-file-csv me-2"></i> Download CSV
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="summary-stat">
+      <div class="summary-value text-primary">{{ report.total_patients }}</div>
+      <div class="summary-label">Patients</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-stat">
+      <div class="summary-value text-primary">${{ '{:,.2f}'.format(report.total_billed) }}</div>
+      <div class="summary-label">Total Billed</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-stat">
+      <div class="summary-value text-success">${{ '{:,.2f}'.format(report.total_paid) }}</div>
+      <div class="summary-label">Total Collected</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="summary-stat">
+      <div class="summary-value text-danger">${{ '{:,.2f}'.format(report.total_outstanding) }}</div>
+      <div class="summary-label">Outstanding Amount</div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Data -->
+<div class="card">
+  <div class="card-header">
+    <i class="fas fa-table healthcare-icon"></i> Detailed Billing Records
+    <span class="badge bg-primary ms-2">{{ report.data|length }} records</span>
+  </div>
+  <div class="card-body">
+    {% if report.data %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Name</th>
+            <th>Admission Date</th>
+            <th>Bill Amount</th>
+            <th>Amount Paid</th>
+            <th>Outstanding</th>
+            <th>Status</th>
+            <th>Insurance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in report.data %}
+          <tr>
+            <td>{{ bill.patient_id }}</td>
+            <td>{{ bill.name }}</td>
+            <td>{{ bill.admission_date }}</td>
+            <td>${{ '{:,.2f}'.format(bill.bill_amount) }}</td>
+            <td>${{ '{:,.2f}'.format(bill.amount_paid) }}</td>
+            <td>${{ '{:,.2f}'.format(bill.outstanding_amount) }}</td>
+            <td>
+              <span class="badge 
+                {% if bill.payment_status == 'Fully Paid' %}bg-success
+                {% elif bill.payment_status == 'Partially Paid' %}bg-warning text-dark
+                {% elif bill.payment_status == 'Unpaid' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ bill.payment_status }}
+              </span>
+            </td>
+            <td>{{ bill.insurance_coverage }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i> No billing records found for this period.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Collection Rate -->
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-percentage healthcare-icon"></i> Collection Rate
+      </div>
+      <div class="card-body">
+        <h2 class="text-center mb-3">{{ '{:.1f}'.format(report.collection_rate) }}%</h2>
+        <div class="progress" style="height: 30px;">
+          <div class="progress-bar bg-success" role="progressbar" style="width: {{ report.collection_rate }}%;" 
+               aria-valuenow="{{ report.collection_rate }}" aria-valuemin="0" aria-valuemax="100">
+            {{ '{:.1f}'.format(report.collection_rate) }}%
+          </div>
+        </div>
+        <div class="text-muted mt-3">
+          <small>Collection rate represents the percentage of billed amount that has been successfully collected.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-column healthcare-icon"></i> Financial Summary
+      </div>
+      <div class="card-body">
+        <canvas id="financialSummaryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer Info -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body text-center text-muted">
+        <small>This is an automatically generated report from the HealthCare Solutions Billing System.<br>
+        If you have any questions about this report, please contact the billing department at billing@healthcaresolutions.com</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page navigation (non-printable) -->
+<div class="row mt-4 no-print">
+  <div class="col-12">
+    <a href="{{ url_for('billing_dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-2"></i> Back to Billing Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Financial Summary Chart
+    const financialCtx = document.getElementById('financialSummaryChart').getContext('2d');
+    const financialData = {
+      labels: ['Billed', 'Collected', 'Outstanding'],
+      datasets: [{
+        label: 'Amount ($)',
+        data: [
+          {{ report.total_billed }}, 
+          {{ report.total_paid }}, 
+          {{ report.total_outstanding }}
+        ],
+        backgroundColor: [
+          'rgba(0, 123, 255, 0.7)',  // Billed - blue
+          'rgba(40, 167, 69, 0.7)',   // Collected - green
+          'rgba(220, 53, 69, 0.7)'    // Outstanding - red
+        ],
+        borderColor: [
+          'rgb(0, 123, 255)',
+          'rgb(40, 167, 69)',
+          'rgb(220, 53, 69)'
+        ],
+        borderWidth: 1
+      }]
+    };
+    
+    new Chart(financialCtx, {
+      type: 'bar',
+      data: financialData,
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+Project Overview:
+
+Build a Hospital Management System (HMS) web application to help hospital staff manage patients, emergencies, billing, reporting, and AI/ML analytics. This is a Design and Analysis of Algorithms (DAA) project, so implement key algorithms like priority queues (heaps) for emergency handling.
+
+Key Features:
+
+Patient Registration (Python/Flask)
+
+Register new patients via a web form.
+
+Store patient info in a CSV file (data/patients.csv).
+
+Columns:
+PatientID, Name, Age, Gender, ConditionSeverity, AdmissionDate, DischargeDate, AdmissionTimestamp, MedicalHistory, BillAmount, PriorityLevel, Locality, InsuranceCoverage, InsuranceCoverageDetail, AmountPaid, OutstandingAmount, PaymentStatus
+
+Simple backend Python module to read/write CSV.
+
+No patient login/authentication needed now — only hospital staff access.
+
+Emergency Handling (C++ with priority queue)
+
+Load emergency cases from CSV based on criteria (e.g., Severity=High, Priority=5, not discharged).
+
+Use a max-heap priority queue to handle emergencies by priority.
+
+Functions to load, process, and mark emergencies as handled.
+
+Output should be usable via command line or callable from Python backend.
+
+Billing System (Python)
+
+Manage billing info from CSV.
+
+Update payments, calculate outstanding amounts.
+
+Provide summary reports of financials.
+
+Report Generation (Python)
+
+Generate daily reports summarizing patient stats, financial snapshot, demographics, disease trends, resource availability, ML insights.
+
+Export reports as downloadable PDF and CSV.
+
+Use libraries like pandas for data analysis and reportlab or fpdf for PDF generation.
+
+AI/ML Analytics (Python)
+
+Simple predictive models for patient visit forecasting and disease trends.
+
+Visualize ML insights using charts on frontend (e.g., Chart.js or Plotly).
+
+Generate relevant insights for hospital management.
+
+Directory Structure:
+
+php
+Copy
+Edit
+hpms/
+├── data/
+│   └── patients.csv                # Patient dataset CSV
+├── include/
+│   └── EmergencyHandling.h        # C++ header for emergency module
+├── src/
+│   └── EmergencyHandling.cpp      # C++ source for emergency queue handling
+├── ml/
+│   └── analytics.py               # Python AI/ML scripts and models
+├── reports/
+│   └── report_generator.py        # Python report generation module
+├── app.py                         # Flask backend main app
+├── templates/
+│   ├── register.html              # Patient registration form
+│   ├── patient_list.html          # List patients and emergency cases
+│   ├── reports.html               # Reports and analytics visualization page
+├── static/
+│   └── css/
+│       └── styles.css             # Styling files
+Technical Notes:
+
+Use Python (Flask) for all web frontend and backend logic except emergency queue which must be implemented in C++.
+
+Connect Python and C++ via subprocess calls or system calls, passing data files between them.
+
+Use CSV as shared data format for simplicity.
+
+No user login system needed at this stage — assume hospital staff access only.
+
+Prioritize clean modular code and clear separation between patient registration, emergency handling, billing, reporting, and AI analytics.
+
+Add comments on where sorting/searching algorithms are used (e.g., priority queue = heap, any sorting for reports).
+
+Frontend should be simple but clean, responsive

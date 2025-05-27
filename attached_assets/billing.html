@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing Management | Healthcare Solutions{% endblock %}
+
+{% block extra_css %}
+<style>
+  .payment-card {
+    border-left: 4px solid var(--bright-blue);
+    transition: transform 0.2s;
+  }
+  
+  .payment-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .payment-card.fully-paid {
+    border-left-color: var(--success-green);
+  }
+  
+  .payment-card.partially-paid {
+    border-left-color: var(--warning-orange);
+  }
+  
+  .payment-card.unpaid {
+    border-left-color: #dc3545;
+  }
+  
+  .status-badge {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 50rem;
+  }
+  
+  .financial-summary-card {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  
+  .summary-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  
+  .progress {
+    height: 0.6rem;
+    margin-top: 0.5rem;
+  }
+  
+  .chart-container {
+    height: 270px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="mb-4">Billing Management</h1>
+    <p class="lead">Track and manage patient billing information, update payment status, and view financial reports.</p>
+  </div>
+</div>
+
+<!-- Financial Summary Section -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="financial-summary-card text-center">
+      <div class="summary-value text-primary">₹{{ '{:,.2f}'.format(summary.total_billed) }}</div>
+      <div class="summary-label">Total Billed Amount</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="financial-summary-card text-center">
+      <div class="summary-value text-success">₹{{ '{:,.2f}'.format(summary.total_paid) }}</div>
+      <div class="summary-label">Total Collected</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="financial-summary-card text-center">
+      <div class="summary-value text-danger">₹{{ '{:,.2f}'.format(summary.total_outstanding) }}</div>
+      <div class="summary-label">Total Outstanding</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="financial-summary-card text-center">
+      <div class="summary-value text-primary">{{ '{:.1f}'.format(summary.collection_rate) }}%</div>
+      <div class="summary-label">Collection Rate</div>
+      <div class="progress">
+        <div class="progress-bar" role="progressbar" style="width: {{ summary.collection_rate }}%;" 
+             aria-valuenow="{{ summary.collection_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Status & Insurance Distribution -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-pie healthcare-icon"></i> Payment Status Distribution
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="paymentStatusChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-shield-alt healthcare-icon"></i> Insurance Coverage
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="insuranceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Patient List & Billing Actions -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <i class="fas fa-file-invoice-dollar healthcare-icon"></i> Patient Billing Records
+      {% if billing_data %}
+      <span class="badge bg-primary">{{ billing_data|length }} records</span>
+      {% endif %}
+    </div>
+    <div class="d-flex">
+      <div class="input-group me-2" style="width: 250px;">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search records...">
+        <button class="btn btn-outline-secondary" type="button" id="searchButton">
+          <i class="fas fa-search"></i>
+        </button>
+      </div> 
+
+  <!-- Sort Dropdown -->
+  <select class="form-select" id="sortDropdown" style="width: 180px;">
+    <option value="default" selected>Sort By</option>
+    <option value="name">Name</option>
+    <option value="admission_date">Admission Date</option>
+    <option value="bill_amount">Bill Amount</option>
+    <option value="amount_paid">Amount Paid</option>
+    <option value="outstanding_amount">Outstanding Amount</option>
+    <option value="payment_status">Payment Status</option>
+  </select>
+</div>
+
+
+    </div>
+  </div>
+  <div class="card-body">
+    {% if billing_data %}
+    <div class="table-responsive">
+      <table class="table table-hover" id="billingTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-sort="patient_id">
+              Patient ID <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="name">
+              Name <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="admission_date">
+              Admission Date <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="bill_amount">
+              Bill Amount <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="amount_paid">
+              Amount Paid <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="outstanding_amount">
+              Outstanding <i class="fas fa-sort"></i>
+            </th>
+            <th class="sortable" data-sort="payment_status">
+              Status <i class="fas fa-sort"></i>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in billing_data %}
+          <tr data-patient-id="{{ bill.patient_id }}">
+            <td>{{ bill.patient_id }}</td>
+            <td>{{ bill.name }}</td>
+            <td data-sort="{{ bill.admission_date }}">{{ bill.admission_date }}</td>
+            <td data-sort="{{ bill.bill_amount }}">₹{{ '{:,.2f}'.format(bill.bill_amount) }}</td>
+            <td data-sort="{{ bill.amount_paid }}">₹{{ '{:,.2f}'.format(bill.amount_paid) }}</td>
+            <td data-sort="{{ bill.outstanding_amount }}">₹{{ '{:,.2f}'.format(bill.outstanding_amount) }}</td>
+            <td data-sort="{{ bill.payment_status }}">
+              <span class="badge 
+                {% if bill.payment_status == 'Fully Paid' %}bg-success
+                {% elif bill.payment_status == 'Partially Paid' %}bg-warning text-dark
+                {% elif bill.payment_status == 'Unpaid' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ bill.payment_status }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary" 
+                      data-bs-toggle="modal" data-bs-target="#updatePaymentModal"
+                      data-patient-id="{{ bill.patient_id }}"
+                      data-patient-name="{{ bill.name }}"
+                      data-bill-amount="{{ bill.bill_amount }}"
+                      data-amount-paid="{{ bill.amount_paid }}"
+                      data-payment-status="{{ bill.payment_status }}">
+                <i class="fas fa-edit"></i> Update
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i> No billing records found.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Update Payment Modal -->
+<div class="modal fade" id="updatePaymentModal" tabindex="-1" aria-labelledby="updatePaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="updatePaymentModalLabel">Update Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('update_payment') }}">
+        <div class="modal-body">
+          <input type="hidden" id="patient_id" name="patient_id">
+          
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <input type="text" class="form-control" id="patient_name" readonly>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Bill Amount</label>
+            <div class="input-group">
+              <span class="input-group-text">₹</span>
+              <input type="text" class="form-control" id="bill_amount" readonly>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="amount_paid" class="form-label">Amount Paid</label>
+            <div class="input-group">
+              <span class="input-group-text">₹</span>
+              <input type="number" step="0.01" min="0" class="form-control" id="amount_paid" name="amount_paid" required>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="payment_status" class="form-label">Payment Status</label>
+            <select class="form-select" id="payment_status" name="payment_status">
+              <option value="Unpaid">Unpaid</option>
+              <option value="Partially Paid">Partially Paid</option>
+              <option value="Fully Paid">Fully Paid</option>
+              <option value="Not Applicable">Not Applicable</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">Generate Financial Report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="report_type" class="form-label">Report Type</label>
+          <select class="form-select" id="report_type">
+            <option value="daily">Daily Report</option>
+            <option value="monthly">Monthly Report</option>
+          </select>
+        </div>
+        
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i> The report will be generated based on the selected time period and will include all financial transactions.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="{{ url_for('generate_report', type='daily') }}" id="generateReportBtn" class="btn btn-primary">
+          <i class="fas fa-file-download me-2"></i> Generate Report
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action buttons -->
+<div class="row mt-4">
+  <div class="col-12 text-end">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reportModal">
+      <i class="fas fa-chart-line me-2"></i> Generate Financial Report
+    </button>
+  </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Initialize Charts
+    const paymentStatusCtx = document.getElementById('paymentStatusChart');
+    if (paymentStatusCtx) {
+        new Chart(paymentStatusCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% for status, count in summary.payment_status_counts.items() %}
+                        '{{ status }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for status, count in summary.payment_status_counts.items() %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: ['#28A745', '#FF6F00', '#dc3545', '#6c757d'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const insuranceCtx = document.getElementById('insuranceChart');
+    if (insuranceCtx) {
+        new Chart(insuranceCtx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: ['Insured', 'Non-Insured'],
+                datasets: [{
+                    data: [{{ summary.insured_count }}, {{ summary.non_insured_count }}],
+                    backgroundColor: ['#007BFF', '#6c757d'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    // 2. Modal Handling
+    const updatePaymentModal = document.getElementById('updatePaymentModal');
+    if (updatePaymentModal) {
+        updatePaymentModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const modal = this;
+            modal.querySelector('#patient_id').value = button.getAttribute('data-patient-id');
+            modal.querySelector('#patient_name').value = button.getAttribute('data-patient-name');
+            modal.querySelector('#bill_amount').value = button.getAttribute('data-bill-amount');
+            modal.querySelector('#amount_paid').value = button.getAttribute('data-amount-paid');
+            modal.querySelector('#payment_status').value = button.getAttribute('data-payment-status');
+        });
+    }
+
+    // 3. Report Type Handling
+    const reportTypeSelect = document.getElementById('report_type');
+    const generateReportBtn = document.getElementById('generateReportBtn');
+    if (reportTypeSelect && generateReportBtn) {
+        reportTypeSelect.addEventListener('change', function() {
+            generateReportBtn.href = `/billing/report/${this.value}`;
+        });
+    }
+
+    // 4. Search Functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const billingTable = document.getElementById('billingTable');
+
+    if (billingTable && searchInput && searchButton) {
+        const rows = Array.from(billingTable.querySelectorAll('tbody tr'));
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td:not(:last-child)')); // Exclude actions column
+                let found = cells.some(cell => 
+                    cell.textContent.toLowerCase().includes(searchTerm)
+                );
+                row.style.display = found ? '' : 'none';
+            });
+        }
+
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') performSearch();
+        });
+        
+        searchInput.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                rows.forEach(row => row.style.display = '');
+            }
+        });
+    }
+
+    // 5. Sorting Functionality
+    const sortDropdown = document.getElementById('sortDropdown');
+    const sortableHeaders = document.querySelectorAll('.sortable');
+
+    if (billingTable) {
+        const rows = Array.from(billingTable.querySelectorAll('tbody tr'));
+
+        function sortTable(columnIndex, sortOrder = 'asc') {
+            const tbody = billingTable.querySelector('tbody');
+            const rowsArray = Array.from(rows);
+
+            rowsArray.sort((a, b) => {
+                const aCell = a.cells[columnIndex];
+                const bCell = b.cells[columnIndex];
+                let aValue = aCell.getAttribute('data-sort') || aCell.textContent.trim();
+                let bValue = bCell.getAttribute('data-sort') || bCell.textContent.trim();
+
+                // Numeric columns (amounts)
+                if ([3, 4, 5].includes(columnIndex)) {
+                    aValue = parseFloat(aValue.replace(/[^0-9.-]/g, '') || 0);
+                    bValue = parseFloat(bValue.replace(/[^0-9.-]/g, '') || 0);
+                    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+
+                // Date column
+                if (columnIndex === 2) {
+                    const aDate = new Date(aValue);
+                    const bDate = new Date(bValue);
+                    return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
+                }
+
+                // Payment status
+                if (columnIndex === 6) {
+                    const statusOrder = {
+                        'Fully Paid': 1, 'Partially Paid': 2, 
+                        'Unpaid': 3, 'Not Applicable': 4
+                    };
+                    aValue = statusOrder[aValue] || 5;
+                    bValue = statusOrder[bValue] || 5;
+                    return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+
+                // Default text comparison
+                return sortOrder === 'asc' 
+                    ? aValue.localeCompare(bValue) 
+                    : bValue.localeCompare(aValue);
+            });
+
+            // Rebuild table while preserving search results
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            tbody.innerHTML = '';
+            rowsArray.forEach(row => {
+                if (!searchTerm || row.style.display !== 'none') {
+                    tbody.appendChild(row);
+                }
+            });
+        }
+
+        // Dropdown sort
+        if (sortDropdown) {
+            sortDropdown.addEventListener('change', function() {
+                if (this.value === 'default') return;
+                
+                const sortMap = {
+                    'name': {index: 1, order: 'asc'},
+                    'admission_date': {index: 2, order: 'asc'},
+                    'bill_amount': {index: 3, order: 'desc'},
+                    'amount_paid': {index: 4, order: 'desc'},
+                    'outstanding_amount': {index: 5, order: 'desc'},
+                    'payment_status': {index: 6, order: 'asc'}
+                };
+                
+                const {index, order} = sortMap[this.value];
+                sortTable(index, order);
+            });
+        }
+
+        // Column header sort
+        sortableHeaders.forEach((header, index) => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const currentSort = this.getAttribute('data-sort-order') || 'asc';
+                const newSort = currentSort === 'asc' ? 'desc' : 'asc';
+                
+                // Reset all headers
+                sortableHeaders.forEach(h => {
+                    h.setAttribute('data-sort-order', '');
+                    const icon = h.querySelector('i');
+                    if (icon) icon.className = 'fas fa-sort';
+                });
+                
+                // Update current header
+                this.setAttribute('data-sort-order', newSort);
+                const icon = this.querySelector('i');
+                if (icon) icon.className = `fas fa-sort-${newSort === 'asc' ? 'up' : 'down'}`;
+                
+                sortTable(index, newSort);
+            });
+        });
+
+        // Initial sort
+        sortTable(0, 'asc');
+    }
+});
+</script>
+{% endblock %}

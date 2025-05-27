@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Emergency Queue | Hospital Management System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/emergency.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="mb-4">Emergency Queue Management</h1>
+        <p class="lead">Manage emergency cases with the hospital's priority-based queue system.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-ambulance me-2"></i> Add Emergency Case
+            </div>
+            <div class="card-body">
+                <form id="emergencyForm" method="POST" action="{{ url_for('add_emergency') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="patient_id" class="form-label required">Patient ID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="patient_id" name="patient_id" required
+                                       placeholder="HMS-YYYY-XXXXXXXX">
+                                <button class="btn btn-outline-secondary" type="button" id="searchPatientBtn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Enter an existing patient ID or search</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="name" class="form-label required">Patient Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="priority" class="form-label required">Priority Level</label>
+                            <select class="form-select" id="priority" name="priority" required>
+                                <option value="" selected disabled>Select priority</option>
+                                <option value="Emergency">Emergency (Highest)</option>
+                                <option value="Urgent">Urgent</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Routine">Routine (Lowest)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="condition" class="form-label required">Medical Condition</label>
+                            <textarea class="form-control" id="condition" name="condition" rows="2" required
+                                      placeholder="Brief description of the emergency condition"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-plus-circle me-2"></i> Add to Emergency Queue
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list-ol me-2"></i> Current Queue
+                <span class="badge bg-primary ms-2">{{ cases|length }} cases</span>
+            </div>
+            <div class="card-body">
+                {% if cases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Priority</th>
+                                    <th>Patient ID</th>
+                                    <th>Name</th>
+                                    <th>Condition</th>
+                                    <th>Time Added</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in cases %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if case.priority_level == 1 %}bg-danger{% elif case.priority_level == 2 %}bg-warning text-dark{% elif case.priority_level == 3 %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ case.priority_name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ case.patient_id }}</td>
+                                    <td>{{ case.name }}</td>
+                                    <td>{{ case.condition }}</td>
+                                    <td>{{ case.formatted_time }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No emergency cases in the queue.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-procedures me-2"></i> Next Patient
+            </div>
+            <div class="card-body">
+                {% if next_case %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i> Priority: {{ next_case.priority_name }}</h5>
+                        <hr>
+                        <p><strong>Patient ID:</strong> {{ next_case.patient_id }}</p>
+                        <p><strong>Name:</strong> {{ next_case.name }}</p>
+                        <p><strong>Condition:</strong> {{ next_case.condition }}</p>
+                        <p><strong>Added:</strong> {{ next_case.formatted_time }}</p>
+                    </div>
+                    <form method="POST" action="{{ url_for('process_next_emergency') }}">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle me-2"></i> Process This Patient
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i> No patients waiting for emergency treatment.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the search button
+    const searchPatientBtn = document.getElementById('searchPatientBtn');
+    if (!searchPatientBtn) return;
+    
+    // Add click event for patient search
+    searchPatientBtn.addEventListener('click', function() {
+        alert('Patient search functionality will be implemented in a future update.');
+    });
+    
+    // Validation for emergency form submission
+    const emergencyForm = document.getElementById('emergencyForm');
+    if (!emergencyForm) return;
+    
+    emergencyForm.addEventListener('submit', function(event) {
+        let isValid = true;
+        
+        // Validate Patient ID format
+        const patientIdInput = document.getElementById('patient_id');
+        const patientIdPattern = /^HMS-\d{4}-[a-zA-Z0-9]{8}$/;
+        
+        if (!patientIdPattern.test(patientIdInput.value)) {
+            alert('Please enter a valid Patient ID in the format HMS-YYYY-XXXXXXXX');
+            isValid = false;
+        }
+        
+        // Check all required fields
+        const requiredFields = emergencyForm.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                alert(`${field.previousElementSibling.textContent.trim()} is required`);
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -17,7 +17,7 @@ def ml_insights():
         # Generate comprehensive ML insights using real patient data
         insights = ml_engine.generate_insights(patients)
         
-        return render_template('ml_insights_enhanced.html', insights=insights)
+        return render_template('ml_insights_optimized.html', insights=insights)
     except Exception as e:
         logging.error(f"Error loading ML insights: {e}")
         return render_template('error.html', error="Error loading ML insights")
@@ -74,10 +74,10 @@ def api_retrain_models():
     """API endpoint to manually trigger comprehensive analysis update"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = ComprehensiveMLEngine()
+        ml_engine = OptimizedMLEngine()
         
-        # Generate fresh comprehensive insights
-        insights = ml_engine.generate_comprehensive_insights(patients)
+        # Generate fresh optimized insights
+        insights = ml_engine.generate_insights(patients)
         
         return jsonify({
             'status': 'success',

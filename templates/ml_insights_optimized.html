@@ -1,0 +1,788 @@
+{% extends "base.html" %}
+
+{% block title %}Real-Time ML Analytics Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Compact Layout - Eliminate White Space */
+  .container-fluid { padding: 0.5rem; }
+  .row { margin: 0; }
+  .col-lg-3, .col-lg-4, .col-lg-6, .col-lg-8, .col-lg-9, .col-lg-12 { padding: 0.25rem; }
+  .card { margin-bottom: 0.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .card-body { padding: 0.75rem; }
+  .card-header { padding: 0.5rem 0.75rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+  
+  /* Header Section */
+  .ml-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+  }
+  
+  /* Peak Time Indicators */
+  .peak-indicator {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 6px;
+    text-align: center;
+    margin: 0.25rem 0;
+  }
+  
+  .peak-time {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+  }
+  
+  .peak-label {
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+  
+  /* Prediction Cards */
+  .prediction-card {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .prediction-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+  }
+  
+  /* Disease Pattern Cards */
+  .disease-item {
+    background: white;
+    border-left: 4px solid #667eea;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .disease-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9rem;
+  }
+  
+  .disease-stats {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+  }
+  
+  .trend-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+  
+  .trend-up { background: #ff4757; color: white; }
+  .trend-down { background: #2ed573; color: white; }
+  .trend-stable { background: #747d8c; color: white; }
+  
+  /* Chart Containers */
+  .chart-container {
+    position: relative;
+    height: 300px;
+    margin: 0.5rem 0;
+  }
+  
+  .small-chart {
+    height: 200px;
+  }
+  
+  /* Geographic Pattern Cards */
+  .geo-card {
+    background: linear-gradient(135deg, #a8edea, #fed6e3);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin: 0.25rem 0;
+  }
+  
+  .geo-title {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 0.9rem;
+  }
+  
+  .geo-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Compact Tables */
+  .compact-table {
+    font-size: 0.85rem;
+  }
+  
+  .compact-table th,
+  .compact-table td {
+    padding: 0.375rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  /* Status Indicators */
+  .status-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+  
+  .status-active {
+    background: #2ed573;
+    color: white;
+  }
+  
+  .status-loading {
+    background: #ffa502;
+    color: white;
+  }
+  
+  /* Real-time Updates */
+  .update-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2ed573;
+    animation: pulse 2s infinite;
+    margin-right: 0.5rem;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .col-lg-3, .col-lg-4, .col-lg-6 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    
+    .prediction-number {
+      font-size: 2rem;
+    }
+    
+    .chart-container {
+      height: 250px;
+    }
+  }
+  
+  /* Data Quality Indicator */
+  .data-quality {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  
+  /* Loading States */
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Status Indicator -->
+<div id="statusIndicator" class="status-indicator status-active">
+  <span class="update-pulse"></span>
+  Real-Time Active
+</div>
+
+<!-- Header Section -->
+<div class="ml-header">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <h2 class="mb-1"><i class="fas fa-brain me-2"></i>ML Analytics Dashboard</h2>
+      <p class="mb-0">Live analysis of {{ insights.summary.total_patients_analyzed if insights.summary else 0 }} patient records</p>
+    </div>
+    <div class="col-lg-4 text-end">
+      <button id="refreshBtn" class="btn btn-light btn-sm">
+        <i class="fas fa-sync-alt me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Peak Times Section -->
+<div class="row">
+  <div class="col-lg-3">
+    <div class="peak-indicator">
+      <span class="peak-time">{{ insights.visit_analysis.peak_times.peak_hour if insights.visit_analysis and insights.visit_analysis.peak_times else 'Loading...' }}</span>
+      <span class="peak-label">Peak Hour</span>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="peak-indicator">
+      <span class="peak-time">{{ insights.visit_analysis.peak_times.peak_day.split('(')[0] if insights.visit_analysis and insights.visit_analysis.peak_times else 'Loading...' }}</span>
+      <span class="peak-label">Busiest Day</span>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="peak-indicator">
+      <span class="peak-time">{{ insights.visit_analysis.peak_times.peak_month.split('(')[0] if insights.visit_analysis and insights.visit_analysis.peak_times else 'Loading...' }}</span>
+      <span class="peak-label">Peak Month</span>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="data-quality">
+      <div>{{ insights.summary.data_quality_score if insights.summary else 0 }}%</div>
+      <div>Data Quality</div>
+    </div>
+  </div>
+</div>
+
+<!-- Predictions and Rush Periods -->
+<div class="row">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-line me-2"></i>Visit Predictions
+      </div>
+      <div class="card-body">
+        <div class="prediction-card">
+          <div>Tomorrow's Visits</div>
+          <div class="prediction-number" id="tomorrowPrediction">
+            {{ insights.visit_analysis.visit_predictions.weekly_forecast[0].predicted_visits if insights.visit_analysis and insights.visit_analysis.visit_predictions and insights.visit_analysis.visit_predictions.weekly_forecast else 'Loading...' }}
+          </div>
+          <div>Expected Patients</div>
+        </div>
+        
+        <div class="mt-2">
+          <h6>Weekly Forecast:</h6>
+          <div id="weeklyForecast">
+            {% if insights.visit_analysis and insights.visit_analysis.visit_predictions and insights.visit_analysis.visit_predictions.weekly_forecast %}
+              {% for day in insights.visit_analysis.visit_predictions.weekly_forecast[:5] %}
+                <div class="d-flex justify-content-between align-items-center py-1">
+                  <span>{{ day.day_name }}</span>
+                  <span class="badge bg-primary">{{ day.predicted_visits }}</span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="loading-shimmer" style="height: 100px; border-radius: 4px;"></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-clock me-2"></i>24-Hour Visit Pattern & Rush Periods
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="hourlyPatternChart"></canvas>
+        </div>
+        
+        <div class="mt-2">
+          <h6>Rush Periods:</h6>
+          <div id="rushPeriods">
+            {% if insights.visit_analysis and insights.visit_analysis.peak_times and insights.visit_analysis.peak_times.rush_periods %}
+              {% for period in insights.visit_analysis.peak_times.rush_periods %}
+                <span class="badge bg-warning me-1 mb-1">{{ period.period }} ({{ period.intensity }})</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">Analyzing rush periods...</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Disease Patterns Section -->
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-virus me-2"></i>Disease Distribution ({{ insights.disease_analysis.total_cases if insights.disease_analysis else 0 }} cases)
+      </div>
+      <div class="card-body">
+        <div class="chart-container small-chart">
+          <canvas id="diseaseDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-trending-up me-2"></i>Top Disease Patterns
+      </div>
+      <div class="card-body">
+        <div id="diseasePatterns">
+          {% if insights.disease_analysis and insights.disease_analysis.disease_distribution %}
+            {% for disease_data in insights.disease_analysis.disease_distribution[:8] %}
+              <div class="disease-item">
+                <div class="disease-name">{{ disease_data.disease }}</div>
+                <div class="disease-stats">
+                  <span>{{ disease_data.cases }} cases ({{ disease_data.prevalence_rate }}%)</span>
+                  <span class="trend-badge trend-{{ 'up' if disease_data.risk_level in ['Very High', 'High'] else 'stable' if disease_data.risk_level == 'Medium' else 'down' }}">
+                    {{ disease_data.risk_level }} Risk
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="loading-shimmer" style="height: 200px; border-radius: 4px;"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Geographic and Demographic Patterns -->
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-map-marked-alt me-2"></i>Geographic Disease Hotspots
+      </div>
+      <div class="card-body">
+        <div id="geographicPatterns">
+          {% if insights.disease_analysis and insights.disease_analysis.geographic_patterns %}
+            {% for pattern in insights.disease_analysis.geographic_patterns[:8] %}
+              <div class="geo-card">
+                <div class="geo-title">{{ pattern.locality }}</div>
+                <div class="geo-stats">
+                  <span>{{ pattern.total_cases }} cases</span>
+                  <span>Primary: {{ pattern.primary_disease }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="loading-shimmer" style="height: 150px; border-radius: 4px;"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-users me-2"></i>Age-Based Disease Patterns
+      </div>
+      <div class="card-body">
+        <div class="chart-container small-chart">
+          <canvas id="agePatternChart"></canvas>
+        </div>
+        
+        <div class="mt-2">
+          {% if insights.disease_analysis and insights.disease_analysis.demographic_patterns and insights.disease_analysis.demographic_patterns.age_groups %}
+            {% for age_group, data in insights.disease_analysis.demographic_patterns.age_groups.items() %}
+              <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                <span class="fw-bold">{{ age_group }}</span>
+                <span>{{ data.total_cases }} cases</span>
+                <span class="text-muted">{{ data.top_disease }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="loading-shimmer" style="height: 80px; border-radius: 4px;"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Capacity Planning and Locality Trends -->
+<div class="row">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-hospital me-2"></i>Capacity Planning
+      </div>
+      <div class="card-body">
+        {% if insights.visit_analysis and insights.visit_analysis.capacity_insights %}
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="fw-bold text-primary">{{ insights.visit_analysis.capacity_insights.capacity_recommendations.beds_needed }}</div>
+              <div class="small">Beds Needed</div>
+            </div>
+            <div class="col-6">
+              <div class="fw-bold text-success">{{ insights.visit_analysis.capacity_insights.capacity_recommendations.doctors_needed }}</div>
+              <div class="small">Doctors</div>
+            </div>
+            <div class="col-6">
+              <div class="fw-bold text-warning">{{ insights.visit_analysis.capacity_insights.capacity_recommendations.nurses_needed }}</div>
+              <div class="small">Nurses</div>
+            </div>
+            <div class="col-6">
+              <div class="fw-bold text-info">{{ insights.visit_analysis.capacity_insights.capacity_recommendations.admin_staff_needed }}</div>
+              <div class="small">Admin Staff</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="loading-shimmer" style="height: 80px; border-radius: 4px;"></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-area me-2"></i>Locality Visit Trends
+      </div>
+      <div class="card-body">
+        <div class="chart-container small-chart">
+          <canvas id="localityTrendsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Disease Category Analysis -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-pie me-2"></i>Disease Categories by Medical Specialty
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% if insights.disease_analysis and insights.disease_analysis.category_analysis %}
+            {% for category, data in insights.disease_analysis.category_analysis.items() %}
+              <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card mb-2" style="border-left: 4px solid #667eea;">
+                  <div class="card-body p-2">
+                    <h6 class="card-title mb-1">{{ category.replace('_', ' ').title() }}</h6>
+                    <div class="small">
+                      <div>{{ data.case_count }} cases ({{ data.percentage }}%)</div>
+                      <div class="text-muted">{{ data.unique_diseases }} conditions</div>
+                      <div class="fw-bold text-success">${{ "{:,.0f}".format(data.avg_cost_per_case) }} avg cost</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="col-12">
+              <div class="loading-shimmer" style="height: 100px; border-radius: 4px;"></div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-info-circle me-2"></i>Analysis Summary
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-lg-3">
+            <div class="text-center">
+              <div class="h4 text-primary">{{ insights.summary.total_patients_analyzed if insights.summary else 0 }}</div>
+              <div class="small">Patients Analyzed</div>
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="text-center">
+              <div class="h4 text-success">{{ insights.disease_analysis.unique_diseases if insights.disease_analysis else 0 }}</div>
+              <div class="small">Unique Conditions</div>
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="text-center">
+              <div class="h4 text-warning">{{ insights.visit_analysis.data_summary.localities_covered if insights.visit_analysis and insights.visit_analysis.data_summary else 0 }}</div>
+              <div class="small">Localities Covered</div>
+            </div>
+          </div>
+          <div class="col-lg-3">
+            <div class="text-center">
+              <div class="h4 text-info">{{ insights.summary.data_quality_score if insights.summary else 0 }}%</div>
+              <div class="small">Data Quality</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-2">
+          <small class="text-muted">
+            Last Updated: {{ insights.summary.analysis_timestamp.split('T')[0] if insights.summary and insights.summary.analysis_timestamp else 'Unknown' }} |
+            Data Range: {{ insights.visit_analysis.data_summary.date_range if insights.visit_analysis and insights.visit_analysis.data_summary else 'N/A' }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    setupRealTimeUpdates();
+    
+    document.getElementById('refreshBtn').addEventListener('click', refreshAllData);
+});
+
+function initializeCharts() {
+    // Hourly Pattern Chart
+    const hourlyCtx = document.getElementById('hourlyPatternChart').getContext('2d');
+    charts.hourlyPattern = new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`),
+            datasets: [{
+                label: 'Patient Visits',
+                data: [], // Will be populated by API
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Visits'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: '24-Hour Visit Pattern'
+                }
+            }
+        }
+    });
+
+    // Disease Distribution Chart
+    const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
+    charts.diseaseDistribution = new Chart(diseaseCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                    '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Age Pattern Chart
+    const ageCtx = document.getElementById('agePatternChart').getContext('2d');
+    charts.agePattern = new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Children (0-17)', 'Young Adults (18-35)', 'Middle-aged (36-60)', 'Seniors (61+)'],
+            datasets: [{
+                label: 'Cases',
+                data: [],
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: '#667eea',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Locality Trends Chart
+    const localityCtx = document.getElementById('localityTrendsChart').getContext('2d');
+    charts.localityTrends = new Chart(localityCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Total Visits',
+                data: [],
+                backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                borderColor: '#764ba2',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Load initial data
+    loadVisitPatterns();
+    loadDiseasePatterns();
+}
+
+function setupRealTimeUpdates() {
+    // Update every 30 seconds
+    setInterval(() => {
+        refreshAllData();
+    }, 30000);
+}
+
+function refreshAllData() {
+    updateStatus('loading', 'Updating Data...');
+    loadVisitPatterns();
+    loadDiseasePatterns();
+}
+
+function loadVisitPatterns() {
+    fetch('/api/ml/visit_predictions?days=7')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error:', data.error);
+                updateStatus('error', 'Error Loading Data');
+                return;
+            }
+            
+            updateVisitCharts(data);
+            updateStatus('active', 'Real-Time Active');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            updateStatus('error', 'Connection Error');
+        });
+}
+
+function loadDiseasePatterns() {
+    fetch('/api/ml/disease_patterns')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error:', data.error);
+                return;
+            }
+            
+            updateDiseaseCharts(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function updateVisitCharts(data) {
+    // Update hourly pattern chart
+    if (data.historical_trends && data.historical_trends.hourly_distribution) {
+        const hourlyData = data.historical_trends.hourly_distribution.map(h => h.visits);
+        charts.hourlyPattern.data.datasets[0].data = hourlyData;
+        charts.hourlyPattern.update();
+    }
+    
+    // Update locality trends chart
+    if (data.historical_trends && data.historical_trends.locality_trends) {
+        const localities = data.historical_trends.locality_trends.slice(0, 10);
+        charts.localityTrends.data.labels = localities.map(l => l.locality);
+        charts.localityTrends.data.datasets[0].data = localities.map(l => l.total_visits);
+        charts.localityTrends.update();
+    }
+}
+
+function updateDiseaseCharts(data) {
+    // Update disease distribution chart
+    if (data.disease_patterns && data.disease_patterns.disease_distribution) {
+        const diseases = Object.keys(data.disease_patterns.disease_distribution).slice(0, 8);
+        const counts = Object.values(data.disease_patterns.disease_distribution).slice(0, 8);
+        
+        charts.diseaseDistribution.data.labels = diseases.map(d => d.charAt(0).toUpperCase() + d.slice(1));
+        charts.diseaseDistribution.data.datasets[0].data = counts;
+        charts.diseaseDistribution.update();
+    }
+    
+    // Update age pattern chart
+    if (data.disease_patterns && data.disease_patterns.demographic_patterns && data.disease_patterns.demographic_patterns.age_groups) {
+        const ageGroups = data.disease_patterns.demographic_patterns.age_groups;
+        const ageData = [
+            ageGroups['Children (0-17)']?.total_cases || 0,
+            ageGroups['Young Adults (18-35)']?.total_cases || 0,
+            ageGroups['Middle-aged (36-60)']?.total_cases || 0,
+            ageGroups['Seniors (61+)']?.total_cases || 0
+        ];
+        
+        charts.agePattern.data.datasets[0].data = ageData;
+        charts.agePattern.update();
+    }
+}
+
+function updateStatus(status, message) {
+    const indicator = document.getElementById('statusIndicator');
+    indicator.className = `status-indicator status-${status}`;
+    indicator.innerHTML = `<span class="update-pulse"></span>${message}`;
+}
+
+// Auto-refresh when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        refreshAllData();
+    }
+});
+</script>
+{% endblock %}

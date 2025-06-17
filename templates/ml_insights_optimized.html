@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}Real-Time ML Analytics Dashboard{% endblock %}
-
 {% block extra_css %}
 <style>
   /* Ultra Compact Layout - No White Space */
@@ -11,7 +9,6 @@
   .card { margin-bottom: 0.25rem; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); min-height: fit-content; }
   .card-body { padding: 0.5rem; }
   .card-header { padding: 0.375rem 0.5rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 0.9rem; }
-  
   /* Header Section */
   .ml-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +17,6 @@
     margin-bottom: 0.25rem;
     border-radius: 6px;
   }
-  
   /* Peak Time Indicators */
   .peak-indicator {
     background: linear-gradient(45deg, #ff6b6b, #ee5a52);
@@ -34,20 +30,17 @@
     flex-direction: column;
     justify-content: center;
   }
-  
   .peak-time {
     font-size: 1.25rem;
     font-weight: bold;
     display: block;
     line-height: 1.2;
   }
-  
   .peak-label {
     font-size: 0.75rem;
     opacity: 0.9;
     margin-top: 0.125rem;
   }
-  
   /* Prediction Cards */
   .prediction-card {
     background: linear-gradient(135deg, #4facfe, #00f2fe);
@@ -56,13 +49,11 @@
     padding: 1rem;
     text-align: center;
   }
-  
   .prediction-number {
     font-size: 2.5rem;
     font-weight: bold;
     margin: 0.5rem 0;
   }
-  
   /* Disease Pattern Cards */
   .disease-item {
     background: white;
@@ -72,45 +63,37 @@
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
-  
   .disease-name {
     font-weight: bold;
     color: #333;
     font-size: 0.9rem;
   }
-  
   .disease-stats {
     font-size: 0.8rem;
     color: #666;
     margin-top: 0.25rem;
   }
-  
   .trend-badge {
     padding: 0.2rem 0.5rem;
     border-radius: 12px;
     font-size: 0.7rem;
     font-weight: bold;
   }
-  
   .trend-up { background: #ff4757; color: white; }
   .trend-down { background: #2ed573; color: white; }
   .trend-stable { background: #747d8c; color: white; }
-  
   /* Chart Containers */
   .chart-container {
     position: relative;
     height: 250px;
     margin: 0.25rem 0;
   }
-  
   .small-chart {
     height: 180px;
   }
-  
   .tiny-chart {
     height: 120px;
   }
-  
   /* Geographic Pattern Cards */
   .geo-card {
     background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -118,31 +101,26 @@
     border-radius: 8px;
     margin: 0.25rem 0;
   }
-  
   .geo-title {
     font-weight: bold;
     color: #2c3e50;
     font-size: 0.9rem;
   }
-  
   .geo-stats {
     display: flex;
     justify-content: space-between;
     margin-top: 0.25rem;
     font-size: 0.8rem;
   }
-  
   /* Compact Tables */
   .compact-table {
     font-size: 0.85rem;
   }
-  
   .compact-table th,
   .compact-table td {
     padding: 0.375rem;
     border-bottom: 1px solid #e9ecef;
   }
-  
   /* Status Indicators */
   .status-indicator {
     position: fixed;
@@ -154,17 +132,14 @@
     font-size: 0.8rem;
     font-weight: bold;
   }
-  
   .status-active {
     background: #2ed573;
     color: white;
   }
-  
   .status-loading {
     background: #ffa502;
     color: white;
   }
-  
   /* Real-time Updates */
   .update-pulse {
     display: inline-block;
@@ -175,33 +150,27 @@
     animation: pulse 2s infinite;
     margin-right: 0.5rem;
   }
-  
   @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
   }
-  
   /* Responsive Adjustments */
   @media (max-width: 768px) {
     .col-lg-3, .col-lg-4, .col-lg-6 {
       flex: 0 0 100%;
       max-width: 100%;
     }
-    
     .prediction-number {
       font-size: 2rem;
     }
-    
     .chart-container {
       height: 200px;
     }
-    
     .container-fluid {
       padding: 0.1rem;
     }
   }
-  
   /* User Feedback System */
   .toast-container {
     position: fixed;
@@ -209,7 +178,6 @@
     right: 20px;
     z-index: 1100;
   }
-  
   .user-feedback {
     background: rgba(102, 126, 234, 0.95);
     color: white;
@@ -219,23 +187,19 @@
     margin-bottom: 0.5rem;
     animation: slideIn 0.3s ease;
   }
-  
   @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
-  
   /* Interactive Elements */
   .interactive-card {
     transition: all 0.2s ease;
     cursor: pointer;
   }
-  
   .interactive-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
-  
   /* Compact Data Tables */
   .data-row {
     display: flex;
@@ -244,11 +208,9 @@
     border-bottom: 1px solid #eee;
     font-size: 0.85rem;
   }
-  
   .data-row:last-child {
     border-bottom: none;
   }
-  
   /* Data Quality Indicator */
   .data-quality {
     background: linear-gradient(45deg, #667eea, #764ba2);
@@ -258,31 +220,26 @@
     text-align: center;
     font-size: 0.8rem;
   }
-  
   /* Loading States */
   .loading-shimmer {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
-  
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
 </style>
 {% endblock %}
-
 {% block content %}
 <!-- Toast Notification Container -->
 <div class="toast-container" id="toastContainer"></div>
-
 <!-- Status Indicator -->
 <div id="statusIndicator" class="status-indicator status-active">
   <span class="update-pulse"></span>
   Real-Time Active
 </div>
-
 <!-- Header Section -->
 <div class="ml-header">
   <div class="row align-items-center">
@@ -297,7 +254,6 @@
     </div>
   </div>
 </div>
-
 <!-- Peak Times Section -->
 <div class="row">
   <div class="col-lg-3">
@@ -325,7 +281,6 @@
     </div>
   </div>
 </div>
-
 <!-- Predictions and Rush Periods -->
 <div class="row">
   <div class="col-lg-4">
@@ -341,7 +296,6 @@
           </div>
           <div>Expected Patients</div>
         </div>
-        
         <div class="mt-2">
           <h6>Weekly Forecast:</h6>
           <div id="weeklyForecast">
@@ -360,7 +314,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-8">
     <div class="card">
       <div class="card-header">
@@ -370,7 +323,6 @@
         <div class="chart-container">
           <canvas id="hourlyPatternChart"></canvas>
         </div>
-        
         <div class="mt-2">
           <h6>Rush Periods:</h6>
           <div id="rushPeriods">
@@ -387,7 +339,6 @@
     </div>
   </div>
 </div>
-
 <!-- Disease Patterns Section -->
 <div class="row">
   <div class="col-lg-6">
@@ -402,7 +353,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-6">
     <div class="card">
       <div class="card-header">
@@ -430,7 +380,6 @@
     </div>
   </div>
 </div>
-
 <!-- Geographic and Demographic Patterns -->
 <div class="row">
   <div class="col-lg-6">
@@ -457,7 +406,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-6">
     <div class="card">
       <div class="card-header">
@@ -467,7 +415,6 @@
         <div class="chart-container small-chart">
           <canvas id="agePatternChart"></canvas>
         </div>
-        
         <div class="mt-2">
           {% if insights.disease_analysis and insights.disease_analysis.demographic_patterns and insights.disease_analysis.demographic_patterns.age_groups %}
             {% for age_group, data in insights.disease_analysis.demographic_patterns.age_groups.items() %}
@@ -485,7 +432,6 @@
     </div>
   </div>
 </div>
-
 <!-- Capacity Planning and Locality Trends -->
 <div class="row">
   <div class="col-lg-4">
@@ -519,7 +465,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-8">
     <div class="card">
       <div class="card-header">
@@ -533,7 +478,6 @@
     </div>
   </div>
 </div>
-
 <!-- Disease Category Analysis -->
 <div class="row">
   <div class="col-lg-12">
@@ -568,7 +512,6 @@
     </div>
   </div>
 </div>
-
 <!-- System Information -->
 <div class="row">
   <div class="col-lg-12">
@@ -603,7 +546,6 @@
             </div>
           </div>
         </div>
-        
         <div class="mt-2">
           <small class="text-muted">
             Last Updated: {{ insights.summary.analysis_timestamp.split('T')[0] if insights.summary and insights.summary.analysis_timestamp else 'Unknown' }} |
@@ -615,19 +557,15 @@
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let charts = {};
-
 document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
     setupRealTimeUpdates();
-    
     document.getElementById('refreshBtn').addEventListener('click', refreshAllData);
 });
-
 function initializeCharts() {
     // Hourly Pattern Chart
     const hourlyCtx = document.getElementById('hourlyPatternChart').getContext('2d');
@@ -664,7 +602,6 @@ function initializeCharts() {
             }
         }
     });
-
     // Disease Distribution Chart
     const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
     charts.diseaseDistribution = new Chart(diseaseCtx, {
@@ -689,7 +626,6 @@ function initializeCharts() {
             }
         }
     });
-
     // Age Pattern Chart
     const ageCtx = document.getElementById('agePatternChart').getContext('2d');
     charts.agePattern = new Chart(ageCtx, {
@@ -714,7 +650,6 @@ function initializeCharts() {
             }
         }
     });
-
     // Locality Trends Chart
     const localityCtx = document.getElementById('localityTrendsChart').getContext('2d');
     charts.localityTrends = new Chart(localityCtx, {
@@ -739,33 +674,27 @@ function initializeCharts() {
             }
         }
     });
-
     // Load initial data
     loadVisitPatterns();
     loadDiseasePatterns();
 }
-
 function setupRealTimeUpdates() {
     // Update every 30 seconds
     setInterval(() => {
         refreshAllData();
     }, 30000);
 }
-
 function refreshAllData() {
     updateStatus('loading', 'Updating Data...');
-    
     // Show visual feedback
     const refreshBtn = document.getElementById('refreshBtn');
     const originalText = refreshBtn.innerHTML;
     refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
     refreshBtn.disabled = true;
-    
     // Add loading animations to all charts
     document.querySelectorAll('.chart-container canvas').forEach(canvas => {
         canvas.style.opacity = '0.5';
     });
-    
     Promise.all([
         loadVisitPatterns(),
         loadDiseasePatterns()
@@ -773,15 +702,12 @@ function refreshAllData() {
         // Restore button
         refreshBtn.innerHTML = originalText;
         refreshBtn.disabled = false;
-        
         // Restore chart opacity
         document.querySelectorAll('.chart-container canvas').forEach(canvas => {
             canvas.style.opacity = '1';
         });
-        
         updateStatus('active', 'Data Updated Successfully');
         showUserFeedback('Data refreshed successfully!', 'success');
-        
         // Show success message briefly
         setTimeout(() => {
             updateStatus('active', 'Real-Time Active');
@@ -794,7 +720,6 @@ function refreshAllData() {
         console.error('Refresh failed:', error);
     });
 }
-
 function loadVisitPatterns() {
     return fetch('/api/ml/visit_predictions?days=7')
         .then(response => response.json())
@@ -804,7 +729,6 @@ function loadVisitPatterns() {
                 updateStatus('error', 'Error Loading Data');
                 throw new Error(data.error);
             }
-            
             updateVisitCharts(data);
             return data;
         })
@@ -814,7 +738,6 @@ function loadVisitPatterns() {
             throw error;
         });
 }
-
 function loadDiseasePatterns() {
     return fetch('/api/ml/disease_patterns')
         .then(response => response.json())
@@ -823,7 +746,6 @@ function loadDiseasePatterns() {
                 console.error('Error:', data.error);
                 throw new Error(data.error);
             }
-            
             updateDiseaseCharts(data);
             return data;
         })
@@ -832,7 +754,6 @@ function loadDiseasePatterns() {
             throw error;
         });
 }
-
 function updateVisitCharts(data) {
     // Update hourly pattern chart
     if (data.historical_trends && data.historical_trends.hourly_distribution) {
@@ -840,7 +761,6 @@ function updateVisitCharts(data) {
         charts.hourlyPattern.data.datasets[0].data = hourlyData;
         charts.hourlyPattern.update();
     }
-    
     // Update locality trends chart
     if (data.historical_trends && data.historical_trends.locality_trends) {
         const localities = data.historical_trends.locality_trends.slice(0, 10);
@@ -849,18 +769,15 @@ function updateVisitCharts(data) {
         charts.localityTrends.update();
     }
 }
-
 function updateDiseaseCharts(data) {
     // Update disease distribution chart
     if (data.disease_patterns && data.disease_patterns.disease_distribution) {
         const diseases = Object.keys(data.disease_patterns.disease_distribution).slice(0, 8);
         const counts = Object.values(data.disease_patterns.disease_distribution).slice(0, 8);
-        
         charts.diseaseDistribution.data.labels = diseases.map(d => d.charAt(0).toUpperCase() + d.slice(1));
         charts.diseaseDistribution.data.datasets[0].data = counts;
         charts.diseaseDistribution.update();
     }
-    
     // Update age pattern chart
     if (data.disease_patterns && data.disease_patterns.demographic_patterns && data.disease_patterns.demographic_patterns.age_groups) {
         const ageGroups = data.disease_patterns.demographic_patterns.age_groups;
@@ -870,24 +787,20 @@ function updateDiseaseCharts(data) {
             ageGroups['Middle-aged (36-60)']?.total_cases || 0,
             ageGroups['Seniors (61+)']?.total_cases || 0
         ];
-        
         charts.agePattern.data.datasets[0].data = ageData;
         charts.agePattern.update();
     }
 }
-
 function updateStatus(status, message) {
     const indicator = document.getElementById('statusIndicator');
     indicator.className = `status-indicator status-${status}`;
     indicator.innerHTML = `<span class="update-pulse"></span>${message}`;
 }
-
 // User feedback notification system
 function showUserFeedback(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = 'user-feedback';
-    
     // Set background color based on type
     const colors = {
         success: 'linear-gradient(45deg, #2ed573, #1dd1a1)',
@@ -895,7 +808,6 @@ function showUserFeedback(message, type = 'info') {
         info: 'linear-gradient(45deg, #667eea, #764ba2)',
         warning: 'linear-gradient(45deg, #ffa726, #ff9800)'
     };
-    
     toast.style.background = colors[type] || colors.info;
     toast.innerHTML = `
         <div class="d-flex justify-content-between align-items-center">
@@ -905,9 +817,7 @@ function showUserFeedback(message, type = 'info') {
             </button>
         </div>
     `;
-    
     container.appendChild(toast);
-    
     // Auto-remove after 4 seconds
     setTimeout(() => {
         if (toast.parentElement) {
@@ -915,14 +825,12 @@ function showUserFeedback(message, type = 'info') {
         }
     }, 4000);
 }
-
 // Auto-refresh when page becomes visible
 document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         refreshAllData();
     }
 });
-
 // Initialize dashboard with welcome message
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {

@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}Real-Time ML Insights & Predictions{% endblock %}
-
 {% block extra_css %}
 <style>
   .ml-container {
@@ -11,7 +9,6 @@
     margin-bottom: 2rem;
     border-radius: 15px;
   }
-  
   .insight-card {
     background: white;
     border-radius: 15px;
@@ -19,19 +16,16 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: none;
   }
-  
   .insight-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(0,0,0,0.15);
   }
-  
   .prediction-number {
     font-size: 3rem;
     font-weight: bold;
     color: #667eea;
     text-align: center;
   }
-  
   .ml-status {
     position: fixed;
     top: 20px;
@@ -42,28 +36,23 @@
     font-size: 0.9rem;
     font-weight: bold;
   }
-  
   .ml-status.active {
     background: #28a745;
     color: white;
   }
-  
   .ml-status.training {
     background: #ffc107;
     color: #212529;
   }
-  
   .ml-status.error {
     background: #dc3545;
     color: white;
   }
-  
   .chart-container {
     position: relative;
     height: 400px;
     margin: 1rem 0;
   }
-  
   .disease-card {
     background: linear-gradient(45deg, #f8f9fa, #e9ecef);
     border-radius: 10px;
@@ -72,21 +61,17 @@
     border-left: 4px solid #667eea;
     transition: all 0.3s ease;
   }
-  
   .disease-card:hover {
     background: linear-gradient(45deg, #e9ecef, #dee2e6);
     transform: translateX(5px);
   }
-  
   .trend-indicator {
     font-size: 1.2rem;
     font-weight: bold;
   }
-  
   .trend-up { color: #dc3545; }
   .trend-down { color: #28a745; }
   .trend-stable { color: #6c757d; }
-  
   .refresh-button {
     background: linear-gradient(45deg, #667eea, #764ba2);
     border: none;
@@ -96,12 +81,10 @@
     font-weight: bold;
     transition: all 0.3s ease;
   }
-  
   .refresh-button:hover {
     transform: scale(1.05);
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
   }
-  
   .loading-spinner {
     border: 3px solid #f3f3f3;
     border-top: 3px solid #667eea;
@@ -111,12 +94,10 @@
     animation: spin 1s linear infinite;
     margin: 0 auto;
   }
-  
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
   .geographic-pattern {
     background: white;
     border-radius: 10px;
@@ -124,7 +105,6 @@
     margin: 0.5rem 0;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   }
-  
   .age-group-card {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
@@ -133,7 +113,6 @@
     margin: 1rem 0;
     text-align: center;
   }
-  
   .real-time-indicator {
     display: inline-block;
     width: 10px;
@@ -143,7 +122,6 @@
     animation: pulse 2s infinite;
     margin-right: 5px;
   }
-  
   @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -151,7 +129,6 @@
   }
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="container-fluid">
   <!-- ML Status Indicator -->
@@ -159,7 +136,6 @@
     <span class="real-time-indicator"></span>
     Real-Time ML Active
   </div>
-  
   <!-- Header Section -->
   <div class="ml-container">
     <div class="container">
@@ -176,7 +152,6 @@
       </div>
     </div>
   </div>
-
   <!-- Visit Predictions Section -->
   <div class="row mb-4">
     <div class="col-lg-4 mb-4">
@@ -193,9 +168,7 @@
             {% endif %}
           </div>
           <p class="text-muted">Expected patients</p>
-          
           <hr>
-          
           <div class="mt-3" id="staffingRecommendations">
             <p class="mb-2"><strong>Recommended Staffing:</strong></p>
             <div class="row text-start">
@@ -214,7 +187,6 @@
         </div>
       </div>
     </div>
-    
     <div class="col-lg-8 mb-4">
       <div class="card insight-card">
         <div class="card-header bg-transparent">
@@ -230,7 +202,6 @@
       </div>
     </div>
   </div>
-
   <!-- Weekly Forecast -->
   <div class="row mb-4">
     <div class="col-12">
@@ -248,7 +219,6 @@
       </div>
     </div>
   </div>
-
   <!-- Disease Pattern Analysis -->
   <div class="row mb-4">
     <div class="col-lg-6">
@@ -295,7 +265,6 @@
         </div>
       </div>
     </div>
-    
     <div class="col-lg-6">
       <div class="card insight-card">
         <div class="card-header bg-transparent">
@@ -311,7 +280,6 @@
       </div>
     </div>
   </div>
-
   <!-- Geographic Patterns -->
   <div class="row mb-4">
     <div class="col-lg-6">
@@ -346,7 +314,6 @@
         </div>
       </div>
     </div>
-    
     <div class="col-lg-6">
       <div class="card insight-card">
         <div class="card-header bg-transparent">
@@ -380,7 +347,6 @@
       </div>
     </div>
   </div>
-
   <!-- ML Model Information -->
   <div class="row mb-4">
     <div class="col-12">
@@ -420,7 +386,6 @@
     </div>
   </div>
 </div>
-
 <!-- Real-time Updates Modal -->
 <div class="modal fade" id="updateModal" tabindex="-1">
   <div class="modal-dialog">
@@ -436,23 +401,19 @@
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let visitTrendsChart, diseaseDistributionChart;
 let refreshInterval;
-
 // Initialize charts and real-time updates
 document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
     startRealTimeUpdates();
-    
     // Event listeners
     document.getElementById('refreshData').addEventListener('click', refreshAllData);
     document.getElementById('retrainModels').addEventListener('click', retrainModels);
 });
-
 function initializeCharts() {
     // Visit Trends Chart
     const visitCtx = document.getElementById('visitTrendsChart').getContext('2d');
@@ -497,7 +458,6 @@ function initializeCharts() {
             }
         }
     });
-
     // Disease Distribution Chart
     const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
     diseaseDistributionChart = new Chart(diseaseCtx, {
@@ -526,25 +486,21 @@ function initializeCharts() {
             }
         }
     });
-    
     // Load initial data
     loadVisitPredictions();
     loadDiseasePatterns();
 }
-
 function startRealTimeUpdates() {
     // Update data every 30 seconds
     refreshInterval = setInterval(() => {
         refreshAllData();
     }, 30000);
 }
-
 function refreshAllData() {
     updateMLStatus('training', 'Updating Data...');
     loadVisitPredictions();
     loadDiseasePatterns();
 }
-
 function loadVisitPredictions() {
     fetch('/api/ml/visit_predictions?days=7')
         .then(response => response.json())
@@ -554,7 +510,6 @@ function loadVisitPredictions() {
                 updateMLStatus('error', 'Error Loading Data');
                 return;
             }
-            
             updateVisitPredictions(data);
             updateMLStatus('active', 'Real-Time ML Active');
         })
@@ -563,7 +518,6 @@ function loadVisitPredictions() {
             updateMLStatus('error', 'Connection Error');
         });
 }
-
 function loadDiseasePatterns() {
     fetch('/api/ml/disease_patterns')
         .then(response => response.json())
@@ -572,67 +526,54 @@ function loadDiseasePatterns() {
                 console.error('Error loading disease patterns:', data.error);
                 return;
             }
-            
             updateDiseasePatterns(data);
         })
         .catch(error => {
             console.error('Error:', error);
         });
 }
-
 function updateVisitPredictions(data) {
     // Update next day prediction
     if (data.predictions && data.predictions.length > 0) {
         const nextDay = data.predictions[0];
         document.getElementById('nextDayPrediction').textContent = nextDay.predicted_visits;
-        
         // Update staffing recommendations
         const visits = nextDay.predicted_visits;
         document.getElementById('recommendedDoctors').textContent = Math.max(1, Math.round(visits / 5));
         document.getElementById('recommendedNurses').textContent = Math.max(1, Math.round(visits / 3));
         document.getElementById('recommendedAdmin').textContent = Math.max(1, Math.round(visits / 10));
     }
-    
     // Update weekly forecast
     updateWeeklyForecast(data.predictions);
-    
     // Update trends chart
     if (data.historical_trends) {
         const historical = data.historical_trends;
         const predictions = data.predictions || [];
-        
         // Combine historical and prediction data
         const allDates = [...historical.dates];
         const allData = [...historical.visit_counts];
-        
         // Add prediction dates and data
         predictions.forEach(pred => {
             allDates.push(pred.date);
         });
-        
         const predictionData = new Array(historical.dates.length).fill(null);
         predictions.forEach(pred => {
             predictionData.push(pred.predicted_visits);
         });
-        
         visitTrendsChart.data.labels = allDates;
         visitTrendsChart.data.datasets[0].data = [...allData, ...new Array(predictions.length).fill(null)];
         visitTrendsChart.data.datasets[1].data = predictionData;
         visitTrendsChart.update();
     }
 }
-
 function updateWeeklyForecast(predictions) {
     const forecastContainer = document.getElementById('weeklyForecast');
     forecastContainer.innerHTML = '';
-    
     if (predictions && predictions.length > 0) {
         predictions.forEach(pred => {
             const col = document.createElement('div');
             col.className = 'col-md-3 col-sm-6 mb-3';
-            
             const confidenceClass = pred.confidence === 'high' ? 'success' : 'warning';
-            
             col.innerHTML = `
                 <div class="card h-100">
                     <div class="card-body text-center">
@@ -646,41 +587,33 @@ function updateWeeklyForecast(predictions) {
         });
     }
 }
-
 function updateDiseasePatterns(data) {
     if (data.disease_patterns && data.disease_patterns.disease_insights) {
         // Update disease insights
         const insights = data.disease_patterns.disease_insights;
         updateDiseaseInsightsDisplay(insights);
-        
         // Update disease distribution chart
         const diseases = insights.slice(0, 8).map(d => d.disease);
         const counts = insights.slice(0, 8).map(d => d.total_cases);
-        
         diseaseDistributionChart.data.labels = diseases;
         diseaseDistributionChart.data.datasets[0].data = counts;
         diseaseDistributionChart.update();
-        
         // Update geographic patterns
         if (data.disease_patterns.geographic_patterns) {
             updateGeographicPatterns(data.disease_patterns.geographic_patterns);
         }
-        
         // Update age patterns
         if (data.disease_patterns.age_patterns) {
             updateAgePatterns(data.disease_patterns.age_patterns);
         }
     }
-    
     // Update statistics
     document.getElementById('diseasesTracked').textContent = data.disease_patterns.total_diseases_tracked || 0;
     document.getElementById('analysisDate').textContent = data.disease_patterns.analysis_date || 'N/A';
 }
-
 function updateDiseaseInsightsDisplay(insights) {
     const container = document.getElementById('diseaseInsights');
     container.innerHTML = '';
-    
     insights.slice(0, 5).forEach(disease => {
         const trendClass = disease.trend === 'Increasing' ? 'trend-up' : 
                           disease.trend === 'Decreasing' ? 'trend-down' : 'trend-stable';
@@ -688,7 +621,6 @@ function updateDiseaseInsightsDisplay(insights) {
                          disease.trend === 'Decreasing' ? 'fa-arrow-down' : 'fa-minus';
         const riskClass = disease.risk_level === 'High' ? 'danger' : 
                          disease.risk_level === 'Medium' ? 'warning' : 'success';
-        
         const diseaseCard = document.createElement('div');
         diseaseCard.className = 'disease-card';
         diseaseCard.innerHTML = `
@@ -708,11 +640,9 @@ function updateDiseaseInsightsDisplay(insights) {
         container.appendChild(diseaseCard);
     });
 }
-
 function updateGeographicPatterns(patterns) {
     const container = document.getElementById('geographicPatterns');
     container.innerHTML = '';
-    
     patterns.slice(0, 5).forEach(pattern => {
         const patternDiv = document.createElement('div');
         patternDiv.className = 'geographic-pattern';
@@ -732,11 +662,9 @@ function updateGeographicPatterns(patterns) {
         container.appendChild(patternDiv);
     });
 }
-
 function updateAgePatterns(patterns) {
     const container = document.getElementById('agePatterns');
     container.innerHTML = '';
-    
     patterns.forEach(pattern => {
         const ageCard = document.createElement('div');
         ageCard.className = 'age-group-card';
@@ -756,16 +684,13 @@ function updateAgePatterns(patterns) {
         container.appendChild(ageCard);
     });
 }
-
 function updateMLStatus(status, message) {
     const statusElement = document.getElementById('mlStatus');
     statusElement.className = `ml-status ${status}`;
     statusElement.innerHTML = `<span class="real-time-indicator"></span>${message}`;
 }
-
 function retrainModels() {
     updateMLStatus('training', 'Retraining Models...');
-    
     fetch('/api/ml/retrain_models', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
@@ -774,10 +699,8 @@ function retrainModels() {
                 showUpdateModal('Training Error', data.error);
                 return;
             }
-            
             updateMLStatus('active', 'Models Retrained');
             showUpdateModal('Success', 'ML models have been successfully retrained with the latest data.');
-            
             // Refresh data after retraining
             setTimeout(refreshAllData, 2000);
         })
@@ -787,13 +710,11 @@ function retrainModels() {
             showUpdateModal('Error', 'Failed to retrain models. Please try again.');
         });
 }
-
 function showUpdateModal(title, message) {
     document.querySelector('#updateModal .modal-title').textContent = title;
     document.getElementById('updateMessage').textContent = message;
     new bootstrap.Modal(document.getElementById('updateModal')).show();
 }
-
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
     if (refreshInterval) {

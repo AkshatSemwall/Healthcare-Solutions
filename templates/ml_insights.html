@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
-
 {% block title %}ML Insights | Healthcare Solutions{% endblock %}
-
 {% block extra_css %}
 <style>
   .insight-card {
@@ -11,29 +9,24 @@
     height: 100%;
     border-left: 4px solid var(--bs-primary);
   }
-  
   .insight-card:hover {
     transform: translateY(-3px);
   }
-  
   .prediction-number {
     font-size: 3rem;
     font-weight: 700;
     color: var(--bs-primary);
     margin-bottom: 0.5rem;
   }
-  
   .prediction-label {
     color: var(--bs-secondary);
     font-size: 0.9rem;
   }
-  
   .chart-container {
     height: 280px;
     width: 100%;
     position: relative;
   }
-  
   .disease-item {
     display: flex;
     justify-content: space-between;
@@ -41,33 +34,26 @@
     padding: 0.75rem 1rem;
     border-bottom: 1px solid rgba(0,0,0,0.1);
   }
-  
   .disease-item:last-child {
     border-bottom: none;
   }
-  
   .disease-name {
     font-weight: 500;
   }
-  
   .disease-trend {
     display: flex;
     align-items: center;
   }
-  
   .disease-cases {
     margin-right: 0.75rem;
     font-weight: 600;
   }
-  
   .trend-up {
     color: var(--bs-warning);
   }
-  
   .trend-down {
     color: var(--bs-success);
   }
-  
   .ml-explanation {
     background-color: var(--bs-light);
     border-radius: var(--bs-border-radius);
@@ -75,13 +61,11 @@
     font-size: 0.9rem;
     margin-top: 2rem;
   }
-  
   .heading-with-info {
     display: flex;
     align-items: center;
     margin-bottom: 1.5rem;
   }
-  
   .info-icon {
     margin-left: 0.5rem;
     color: var(--bs-info);
@@ -89,7 +73,6 @@
   }
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="row">
   <div class="col-lg-12">
@@ -100,7 +83,6 @@
     <p class="lead">AI-powered analytics to help optimize hospital operations and resource allocation.</p>
   </div>
 </div>
-
 <!-- Visit Predictions Section -->
 <div class="row mb-4">
   <div class="col-lg-4 mb-4">
@@ -109,9 +91,7 @@
         <h5 class="mb-3">Predicted Tomorrow's Visits</h5>
         <div class="prediction-number">{{ insights.visit_predictions.next_day_visits }}</div>
         <p class="prediction-label">Expected patients</p>
-        
         <hr>
-        
         <div class="mt-3">
           <p class="mb-1">Recommended staffing:</p>
           <ul class="text-start">
@@ -123,7 +103,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-8 mb-4">
     <div class="card">
       <div class="card-header">
@@ -137,7 +116,6 @@
     </div>
   </div>
 </div>
-
 <!-- Disease Prediction Section -->
 <div class="row mb-4">
   <div class="col-lg-6 mb-4">
@@ -152,7 +130,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-lg-6 mb-4">
     <div class="card">
       <div class="card-header">
@@ -175,7 +152,6 @@
               </div>
             </div>
           {% endfor %}
-          
           <div class="mt-3">
             <p class="mb-0 text-muted small">
               <i class="fas fa-info-circle me-1"></i> 
@@ -191,7 +167,6 @@
     </div>
   </div>
 </div>
-
 <!-- ML Explanation Section -->
 <div class="ml-explanation">
   <h5><i class="fas fa-robot me-2"></i> How These Predictions Work</h5>
@@ -216,7 +191,6 @@
   </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -226,7 +200,6 @@
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl)
     });
-  
     // Visit Trends Chart
     const visitCtx = document.getElementById('visitTrendsChart').getContext('2d');
     const visitData = {
@@ -255,7 +228,6 @@
         }
       ]
     };
-    
     new Chart(visitCtx, {
       type: 'line',
       data: visitData,
@@ -291,7 +263,6 @@
         }
       }
     });
-    
     // Disease Distribution Chart
     const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
     const diseaseData = {
@@ -314,7 +285,6 @@
         borderWidth: 1
       }]
     };
-    
     new Chart(diseaseCtx, {
       type: 'doughnut',
       data: diseaseData,

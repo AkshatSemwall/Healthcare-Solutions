@@ -54,6 +54,33 @@
     font-weight: 600;
     color: var(--bs-primary);
   }
+  
+  .sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 20px;
+  }
+  
+  .sortable-header:hover {
+    background-color: var(--bs-light);
+  }
+  
+  .sort-icon {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+  }
+  
+  .sort-active {
+    font-weight: bold;
+  }
+  
+  .sort-active .sort-icon {
+    opacity: 1;
+  }
 </style>
 {% endblock %}
 
@@ -140,14 +167,38 @@
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th>Patient ID</th>
-                  <th>Name</th>
-                  <th>Age</th>
+                  <th class="sortable-header {% if current_sort == 'patient_id' %}sort-active{% endif %}" 
+                      onclick="sortTable('patient_id')">
+                    Patient ID
+                    <i class="fas fa-sort{% if current_sort == 'patient_id' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
+                  <th class="sortable-header {% if current_sort == 'name' %}sort-active{% endif %}" 
+                      onclick="sortTable('name')">
+                    Name
+                    <i class="fas fa-sort{% if current_sort == 'name' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
+                  <th class="sortable-header {% if current_sort == 'age' %}sort-active{% endif %}" 
+                      onclick="sortTable('age')">
+                    Age
+                    <i class="fas fa-sort{% if current_sort == 'age' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
                   <th>Gender</th>
-                  <th>Condition Severity</th>
-                  <th>Admission Date</th>
+                  <th class="sortable-header {% if current_sort == 'condition_severity' %}sort-active{% endif %}" 
+                      onclick="sortTable('condition_severity')">
+                    Condition Severity
+                    <i class="fas fa-sort{% if current_sort == 'condition_severity' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
+                  <th class="sortable-header {% if current_sort == 'admission_date' %}sort-active{% endif %}" 
+                      onclick="sortTable('admission_date')">
+                    Admission Date
+                    <i class="fas fa-sort{% if current_sort == 'admission_date' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
                   <th>Status</th>
-                  <th>Outstanding Amount</th>
+                  <th class="sortable-header {% if current_sort == 'outstanding_amount' %}sort-active{% endif %}" 
+                      onclick="sortTable('outstanding_amount')">
+                    Outstanding Amount
+                    <i class="fas fa-sort{% if current_sort == 'outstanding_amount' %}{% if current_order == 'asc' %}-up{% else %}-down{% endif %}{% endif %} sort-icon"></i>
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -335,5 +386,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Sort table function
+function sortTable(column) {
+  const currentSort = '{{ current_sort }}';
+  const currentOrder = '{{ current_order }}';
+  
+  // Determine new sort order
+  let newOrder = 'asc';
+  if (currentSort === column && currentOrder === 'asc') {
+    newOrder = 'desc';
+  }
+  
+  // Get current URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('sort', column);
+  urlParams.set('order', newOrder);
+  
+  // Redirect with new sort parameters
+  window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
 </script>
 {% endblock %}

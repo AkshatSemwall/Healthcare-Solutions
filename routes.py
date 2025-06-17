@@ -109,8 +109,31 @@ def patients():
         query = request.args.get('search', '')
         severity_filter = request.args.get('severity', '')
         status_filter = request.args.get('status', '')
+        sort_by = request.args.get('sort', 'name')
+        sort_order = request.args.get('order', 'asc')
         
         patients = search_patients(query, severity_filter, status_filter)
+        
+        # Sort patients based on sort_by parameter
+        if patients:
+            reverse_order = sort_order == 'desc'
+            
+            if sort_by == 'name':
+                patients.sort(key=lambda p: p.name.lower(), reverse=reverse_order)
+            elif sort_by == 'patient_id':
+                patients.sort(key=lambda p: p.patient_id, reverse=reverse_order)
+            elif sort_by == 'age':
+                patients.sort(key=lambda p: p.age, reverse=reverse_order)
+            elif sort_by == 'admission_date':
+                patients.sort(key=lambda p: p.admission_date, reverse=reverse_order)
+            elif sort_by == 'condition_severity':
+                # Custom sort for severity levels (Critical > High > Moderate > Mild)
+                severity_priority = {'Critical': 4, 'High': 3, 'Moderate': 2, 'Mild': 1}
+                patients.sort(key=lambda p: severity_priority.get(p.condition_severity, 0), reverse=reverse_order)
+            elif sort_by == 'outstanding_amount':
+                patients.sort(key=lambda p: p.outstanding_amount, reverse=reverse_order)
+            elif sort_by == 'locality':
+                patients.sort(key=lambda p: p.locality.lower() if p.locality else '', reverse=reverse_order)
         
         # Get unique severity levels for filter dropdown
         all_patients = load_patients_from_csv()
@@ -121,7 +144,9 @@ def patients():
                              severity_levels=severity_levels,
                              current_search=query,
                              current_severity=severity_filter,
-                             current_status=status_filter)
+                             current_status=status_filter,
+                             current_sort=sort_by,
+                             current_order=sort_order)
     except Exception as e:
         logging.error(f"Error loading patients: {e}")
         return render_template('error.html', error="Error loading patient data")

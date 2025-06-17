@@ -387,8 +387,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Sort table function
-function sortTable(column) {
+// Sort table function - defined globally
+window.sortTable = function(column) {
   const currentSort = '{{ current_sort }}';
   const currentOrder = '{{ current_order }}';
   
@@ -405,6 +405,6 @@ function sortTable(column) {
   
   // Redirect with new sort parameters
   window.location.href = window.location.pathname + '?' + urlParams.toString();
-}
+};
 </script>
 {% endblock %}

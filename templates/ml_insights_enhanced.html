@@ -260,18 +260,18 @@
         </div>
         <div class="card-body">
           <div id="diseaseInsights">
-            {% if insights.disease_patterns and insights.disease_patterns.disease_insights %}
-              {% for disease in insights.disease_patterns.disease_insights[:5] %}
+            {% if insights.disease_patterns and insights.disease_patterns.risk_assessment %}
+              {% for disease in insights.disease_patterns.risk_assessment[:5] %}
                 <div class="disease-card">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 class="mb-1">{{ disease.disease }}</h6>
-                      <small class="text-muted">{{ disease.total_cases }} cases • {{ disease.prevalence_rate }}% prevalence</small>
+                      <h6 class="mb-1">{{ disease.disease.title() }}</h6>
+                      <small class="text-muted">{{ disease.cases }} cases • {{ disease.prevalence_rate }}% prevalence</small>
                     </div>
                     <div class="trend-indicator">
-                      {% if disease.trend == 'Increasing' %}
+                      {% if disease.risk_level in ['Very High', 'High'] %}
                         <span class="trend-up"><i class="fas fa-arrow-up"></i></span>
-                      {% elif disease.trend == 'Decreasing' %}
+                      {% elif disease.risk_level == 'Low' %}
                         <span class="trend-down"><i class="fas fa-arrow-down"></i></span>
                       {% else %}
                         <span class="trend-stable"><i class="fas fa-minus"></i></span>
@@ -279,7 +279,7 @@
                     </div>
                   </div>
                   <div class="mt-2">
-                    <span class="badge bg-{{ 'danger' if disease.risk_level == 'High' else 'warning' if disease.risk_level == 'Medium' else 'success' }}">
+                    <span class="badge bg-{{ 'danger' if disease.risk_level in ['Very High', 'High'] else 'warning' if disease.risk_level == 'Medium' else 'success' }}">
                       {{ disease.risk_level }} Risk
                     </span>
                   </div>

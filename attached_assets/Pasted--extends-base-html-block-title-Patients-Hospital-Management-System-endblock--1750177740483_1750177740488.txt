@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}Patients | Hospital Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+  .search-form {
+    background-color: white;
+    border-radius: var(--bs-border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .filter-section {
+    background-color: var(--bs-light);
+    border-radius: var(--bs-border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .patient-card {
+    transition: transform 0.2s;
+  }
+  
+  .patient-card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.6em;
+  }
+  
+  .severity-critical {
+    background-color: var(--bs-danger);
+  }
+  
+  .severity-high {
+    background-color: var(--bs-warning);
+    color: var(--bs-dark);
+  }
+  
+  .severity-moderate {
+    background-color: var(--bs-info);
+  }
+  
+  .severity-mild {
+    background-color: var(--bs-success);
+  }
+  
+  .patient-id {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--bs-primary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="mb-4">Patient Management</h1>
+    <p class="lead">Search, filter, and manage patient records in the hospital system.</p>
+  </div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="search-form">
+  <form method="GET" action="{{ url_for('patients') }}">
+    <div class="row">
+      <div class="col-lg-4 mb-3">
+        <label for="search" class="form-label">Search Patients</label>
+        <input type="text" class="form-control" id="search" name="search" 
+               value="{{ current_search }}" 
+               placeholder="Search by name, patient ID, or medical history">
+      </div>
+      
+      <div class="col-lg-3 mb-3">
+        <label for="severity" class="form-label">Condition Severity</label>
+        <select class="form-select" id="severity" name="severity">
+          <option value="">All Severities</option>
+          {% for level in severity_levels %}
+            <option value="{{ level }}" {% if current_severity == level %}selected{% endif %}>
+              {{ level }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-lg-3 mb-3">
+        <label for="status" class="form-label">Admission Status</label>
+        <select class="form-select" id="status" name="status">
+          <option value="">All Patients</option>
+          <option value="Active" {% if current_status == 'Active' %}selected{% endif %}>Active (Not Discharged)</option>
+          <option value="Discharged" {% if current_status == 'Discharged' %}selected{% endif %}>Discharged</option>
+        </select>
+      </div>
+      
+      <div class="col-lg-2 mb-3">
+        <label class="form-label">&nbsp;</label>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search me-1"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    {% if current_search or current_severity or current_status %}
+      <div class="mt-2">
+        <a href="{{ url_for('patients') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-times me-1"></i> Clear Filters
+        </a>
+      </div>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Results Section -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-users me-2"></i> Patient Records
+            <span class="badge bg-primary ms-2">{{ patients|length }} patients</span>
+          </div>
+          <div>
+            <a href="{{ url_for('register') }}" class="btn btn-success btn-sm">
+              <i class="fas fa-user-plus me-1"></i> Register New Patient
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if patients %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Condition Severity</th>
+                  <th>Admission Date</th>
+                  <th>Status</th>
+                  <th>Outstanding Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for patient in patients %}
+                <tr class="patient-card">
+                  <td>
+                    <span class="patient-id">{{ patient.patient_id }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ patient.name }}</strong>
+                    {% if patient.locality %}
+                      <br><small class="text-muted">{{ patient.locality }}</small>
+                    {% endif %}
+                  </td>
+                  <td>{{ patient.age }}</td>
+                  <td>{{ patient.gender }}</td>
+                  <td>
+                    <span class="badge status-badge 
+                      {% if patient.condition_severity == 'Critical' %}severity-critical
+                      {% elif patient.condition_severity == 'High' %}severity-high
+                      {% elif patient.condition_severity == 'Moderate' %}severity-moderate
+                      {% else %}severity-mild{% endif %}">
+                      {{ patient.condition_severity }}
+                    </span>
+                  </td>
+                  <td>{{ patient.admission_date }}</td>
+                  <td>
+                    {% if patient.discharge_date %}
+                      <span class="badge bg-success">Discharged</span>
+                      <br><small class="text-muted">{{ patient.discharge_date }}</small>
+                    {% else %}
+                      <span class="badge bg-primary">Active</span>
+                      {% if patient.is_emergency %}
+                        <br><span class="badge bg-danger">Emergency</span>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if patient.outstanding_amount > 0 %}
+                      <span class="text-danger fw-bold">₹{{ '{:,.2f}'.format(patient.outstanding_amount) }}</span>
+                    {% else %}
+                      <span class="text-success">Paid</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <a href="{{ url_for('patient_detail', patient_id=patient.patient_id) }}" 
+                         class="btn btn-outline-primary" title="View Details">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      {% if patient.outstanding_amount > 0 %}
+                        <button type="button" class="btn btn-outline-success" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#paymentModal" 
+                                data-patient-id="{{ patient.patient_id }}"
+                                data-patient-name="{{ patient.name }}"
+                                data-outstanding="{{ patient.outstanding_amount }}"
+                                title="Record Payment">
+                          <i class="fas fa-dollar-sign"></i>
+                        </button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4>No Patients Found</h4>
+            {% if current_search or current_severity or current_status %}
+              <p class="text-muted">No patients match your current search criteria. Try adjusting your filters.</p>
+              <a href="{{ url_for('patients') }}" class="btn btn-outline-primary">
+                <i class="fas fa-refresh me-1"></i> View All Patients
+              </a>
+            {% else %}
+              <p class="text-muted">No patients have been registered in the system yet.</p>
+              <a href="{{ url_for('register') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-1"></i> Register First Patient
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" id="paymentForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <p class="form-control-plaintext" id="modalPatientName"></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Outstanding Amount</label>
+            <p class="form-control-plaintext text-danger fw-bold" id="modalOutstanding"></p>
+          </div>
+          <div class="mb-3">
+            <label for="paymentAmount" class="form-label">Payment Amount (₹)</label>
+            <input type="number" step="0.01" min="0.01" class="form-control" 
+                   id="paymentAmount" name="payment_amount" required>
+            <div class="form-text">Enter the amount being paid</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check me-1"></i> Record Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Payment Modal Handler
+  const paymentModal = document.getElementById('paymentModal');
+  const paymentForm = document.getElementById('paymentForm');
+  
+  if (paymentModal) {
+    paymentModal.addEventListener('show.bs.modal', function(event) {
+      const button = event.relatedTarget;
+      const patientId = button.getAttribute('data-patient-id');
+      const patientName = button.getAttribute('data-patient-name');
+      const outstanding = button.getAttribute('data-outstanding');
+      
+      // Update modal content
+      document.getElementById('modalPatientName').textContent = patientName;
+      document.getElementById('modalOutstanding').textContent = '₹' + parseFloat(outstanding).toLocaleString();
+      
+      // Set form action
+      paymentForm.action = `/update_payment/${patientId}`;
+      
+      // Set max payment amount
+      const paymentAmountInput = document.getElementById('paymentAmount');
+      paymentAmountInput.max = outstanding;
+      paymentAmountInput.value = '';
+      paymentAmountInput.focus();
+    });
+  }
+  
+  // Auto-submit search form on filter change
+  const severitySelect = document.getElementById('severity');
+  const statusSelect = document.getElementById('status');
+  
+  if (severitySelect) {
+    severitySelect.addEventListener('change', function() {
+      this.form.submit();
+    });
+  }
+  
+  if (statusSelect) {
+    statusSelect.addEventListener('change', function() {
+      this.form.submit();
+    });
+  }
+  
+  // Search input debounce
+  const searchInput = document.getElementById('search');
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        if (this.value.length >= 3 || this.value.length === 0) {
+          this.form.submit();
+        }
+      }, 500);
+    });
+  }
+});
+</script>
+{% endblock %}

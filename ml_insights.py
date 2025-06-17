@@ -1,7 +1,7 @@
 from flask import render_template, jsonify, request
 from app import app
 from utils import load_patients_from_csv
-from enhanced_ml_models import ComprehensiveMLEngine
+from optimized_ml_engine import OptimizedMLEngine
 from datetime import datetime, timedelta
 import logging
 
@@ -11,11 +11,11 @@ def ml_insights():
     try:
         patients = load_patients_from_csv()
         
-        # Initialize enhanced ML engine
-        ml_engine = ComprehensiveMLEngine()
+        # Initialize optimized ML engine
+        ml_engine = OptimizedMLEngine()
         
         # Generate comprehensive ML insights using real patient data
-        insights = ml_engine.generate_comprehensive_insights(patients)
+        insights = ml_engine.generate_insights(patients)
         
         return render_template('ml_insights_enhanced.html', insights=insights)
     except Exception as e:
@@ -27,16 +27,16 @@ def api_visit_predictions():
     """API endpoint for real-time visit predictions"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = ComprehensiveMLEngine()
+        ml_engine = OptimizedMLEngine()
         
         days_ahead = request.args.get('days', 7, type=int)
         
-        # Generate comprehensive insights
-        insights = ml_engine.generate_comprehensive_insights(patients)
-        visit_patterns = insights.get('visit_patterns', {})
+        # Generate optimized insights
+        insights = ml_engine.generate_insights(patients)
+        visit_analysis = insights.get('visit_analysis', {})
         
-        predictions = visit_patterns.get('daily_predictions', [])[:days_ahead]
-        historical = visit_patterns.get('temporal_patterns', {})
+        predictions = visit_analysis.get('visit_predictions', {}).get('weekly_forecast', [])[:days_ahead]
+        historical = visit_analysis.get('peak_times', {})
         
         return jsonify({
             'predictions': predictions,
@@ -54,16 +54,16 @@ def api_disease_patterns():
     """API endpoint for real-time disease pattern analysis"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = ComprehensiveMLEngine()
+        ml_engine = OptimizedMLEngine()
         
-        insights = ml_engine.generate_comprehensive_insights(patients)
-        disease_patterns = insights.get('disease_patterns', {})
+        insights = ml_engine.generate_insights(patients)
+        disease_analysis = insights.get('disease_analysis', {})
         
         return jsonify({
-            'disease_patterns': disease_patterns,
+            'disease_patterns': disease_analysis,
             'last_updated': datetime.now().isoformat(),
             'data_points': len(patients),
-            'data_quality': insights.get('data_summary', {}).get('data_quality_score', 0)
+            'data_quality': insights.get('summary', {}).get('data_quality_score', 0)
         })
     except Exception as e:
         logging.error(f"Error in disease patterns API: {e}")

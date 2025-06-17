@@ -1,24 +1,89 @@
-from flask import render_template
+from flask import render_template, jsonify, request
 from app import app
 from utils import load_patients_from_csv
+from ml_models import RealTimeMLEngine
 from datetime import datetime, timedelta
-import random
 import logging
-from collections import Counter
 
 @app.route('/ml_insights')
 def ml_insights():
-    """ML Insights and predictions page"""
+    """ML Insights and predictions page with real-time ML models"""
     try:
         patients = load_patients_from_csv()
         
-        # Generate ML insights based on actual data
-        insights = generate_ml_insights(patients)
+        # Initialize ML engine
+        ml_engine = RealTimeMLEngine()
+        
+        # Generate comprehensive ML insights
+        insights = ml_engine.generate_comprehensive_insights(patients)
         
         return render_template('ml_insights.html', insights=insights)
     except Exception as e:
         logging.error(f"Error loading ML insights: {e}")
         return render_template('error.html', error="Error loading ML insights")
+
+@app.route('/api/ml/visit_predictions')
+def api_visit_predictions():
+    """API endpoint for real-time visit predictions"""
+    try:
+        patients = load_patients_from_csv()
+        ml_engine = RealTimeMLEngine()
+        
+        days_ahead = request.args.get('days', 7, type=int)
+        
+        # Train model if needed
+        if ml_engine.should_retrain():
+            training_result = ml_engine.train_models(patients)
+            logging.info(f"Model retrained: {training_result}")
+        
+        predictions = ml_engine.visit_predictor.predict_next_days(days_ahead)
+        historical = ml_engine.visit_predictor.get_historical_trends(patients, 30)
+        
+        return jsonify({
+            'predictions': predictions,
+            'historical_trends': historical,
+            'last_updated': datetime.now().isoformat(),
+            'model_status': 'active' if ml_engine.visit_predictor.is_trained else 'training_needed'
+        })
+    except Exception as e:
+        logging.error(f"Error in visit predictions API: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ml/disease_patterns')
+def api_disease_patterns():
+    """API endpoint for real-time disease pattern analysis"""
+    try:
+        patients = load_patients_from_csv()
+        ml_engine = RealTimeMLEngine()
+        
+        patterns = ml_engine.disease_analyzer.analyze_disease_patterns(patients)
+        
+        return jsonify({
+            'disease_patterns': patterns,
+            'last_updated': datetime.now().isoformat(),
+            'data_points': len(patients)
+        })
+    except Exception as e:
+        logging.error(f"Error in disease patterns API: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ml/retrain_models', methods=['POST'])
+def api_retrain_models():
+    """API endpoint to manually trigger model retraining"""
+    try:
+        patients = load_patients_from_csv()
+        ml_engine = RealTimeMLEngine()
+        
+        training_results = ml_engine.train_models(patients)
+        
+        return jsonify({
+            'training_results': training_results,
+            'retrained_at': datetime.now().isoformat(),
+            'data_points': len(patients)
+        })
+    except Exception as e:
+        logging.error(f"Error retraining models: {e}")
+        return jsonify({'error': str(e)}), 500
 
 def generate_ml_insights(patients):
     """Generate ML insights from patient data"""

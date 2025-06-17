@@ -1,0 +1,804 @@
+{% extends "base.html" %}
+
+{% block title %}Real-Time ML Insights & Predictions{% endblock %}
+
+{% block extra_css %}
+<style>
+  .ml-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 15px;
+  }
+  
+  .insight-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+  }
+  
+  .insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+  
+  .prediction-number {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #667eea;
+    text-align: center;
+  }
+  
+  .ml-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 15px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+  
+  .ml-status.active {
+    background: #28a745;
+    color: white;
+  }
+  
+  .ml-status.training {
+    background: #ffc107;
+    color: #212529;
+  }
+  
+  .ml-status.error {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 400px;
+    margin: 1rem 0;
+  }
+  
+  .disease-card {
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+  }
+  
+  .disease-card:hover {
+    background: linear-gradient(45deg, #e9ecef, #dee2e6);
+    transform: translateX(5px);
+  }
+  
+  .trend-indicator {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .trend-up { color: #dc3545; }
+  .trend-down { color: #28a745; }
+  .trend-stable { color: #6c757d; }
+  
+  .refresh-button {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+  
+  .refresh-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+  
+  .loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .geographic-pattern {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .age-group-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    text-align: center;
+  }
+  
+  .real-time-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #28a745;
+    animation: pulse 2s infinite;
+    margin-right: 5px;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- ML Status Indicator -->
+  <div id="mlStatus" class="ml-status active">
+    <span class="real-time-indicator"></span>
+    Real-Time ML Active
+  </div>
+  
+  <!-- Header Section -->
+  <div class="ml-container">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8">
+          <h1><i class="fas fa-robot me-2"></i>Real-Time ML Insights & Predictions</h1>
+          <p class="lead">Advanced machine learning algorithms analyzing live patient data for predictive healthcare insights</p>
+        </div>
+        <div class="col-lg-4 text-end">
+          <button id="refreshData" class="refresh-button">
+            <i class="fas fa-sync-alt me-2"></i>Refresh Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visit Predictions Section -->
+  <div class="row mb-4">
+    <div class="col-lg-4 mb-4">
+      <div class="card insight-card">
+        <div class="card-body text-center">
+          <h5 class="mb-3">
+            <i class="fas fa-calendar-day me-2"></i>Tomorrow's Predicted Visits
+          </h5>
+          <div id="nextDayPrediction" class="prediction-number">
+            {% if insights.visit_predictions and insights.visit_predictions.next_day %}
+              {{ insights.visit_predictions.next_day.predicted_visits }}
+            {% else %}
+              Loading...
+            {% endif %}
+          </div>
+          <p class="text-muted">Expected patients</p>
+          
+          <hr>
+          
+          <div class="mt-3" id="staffingRecommendations">
+            <p class="mb-2"><strong>Recommended Staffing:</strong></p>
+            <div class="row text-start">
+              <div class="col-12">
+                <small>
+                  <i class="fas fa-user-md me-1"></i>
+                  <span id="recommendedDoctors">-</span> Doctors<br>
+                  <i class="fas fa-user-nurse me-1"></i>
+                  <span id="recommendedNurses">-</span> Nurses<br>
+                  <i class="fas fa-users me-1"></i>
+                  <span id="recommendedAdmin">-</span> Admin Staff
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-8 mb-4">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i>Patient Visit Trends & Predictions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="visitTrendsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Forecast -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-calendar-week me-2"></i>7-Day Visit Forecast
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="weeklyForecast" class="row">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disease Pattern Analysis -->
+  <div class="row mb-4">
+    <div class="col-lg-6">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-virus me-2"></i>Disease Pattern Analysis
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="diseaseInsights">
+            {% if insights.disease_patterns and insights.disease_patterns.disease_insights %}
+              {% for disease in insights.disease_patterns.disease_insights[:5] %}
+                <div class="disease-card">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h6 class="mb-1">{{ disease.disease }}</h6>
+                      <small class="text-muted">{{ disease.total_cases }} cases • {{ disease.prevalence_rate }}% prevalence</small>
+                    </div>
+                    <div class="trend-indicator">
+                      {% if disease.trend == 'Increasing' %}
+                        <span class="trend-up"><i class="fas fa-arrow-up"></i></span>
+                      {% elif disease.trend == 'Decreasing' %}
+                        <span class="trend-down"><i class="fas fa-arrow-down"></i></span>
+                      {% else %}
+                        <span class="trend-stable"><i class="fas fa-minus"></i></span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge bg-{{ 'danger' if disease.risk_level == 'High' else 'warning' if disease.risk_level == 'Medium' else 'success' }}">
+                      {{ disease.risk_level }} Risk
+                    </span>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-4">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading disease patterns...</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-6">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-pie me-2"></i>Disease Distribution
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="diseaseDistributionChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Geographic Patterns -->
+  <div class="row mb-4">
+    <div class="col-lg-6">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-map-marked-alt me-2"></i>Geographic Disease Patterns
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="geographicPatterns">
+            {% if insights.disease_patterns and insights.disease_patterns.geographic_patterns %}
+              {% for pattern in insights.disease_patterns.geographic_patterns[:5] %}
+                <div class="geographic-pattern">
+                  <h6>{{ pattern.locality }}</h6>
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">Total Cases:</small><br>
+                      <strong>{{ pattern.total_cases }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Primary Concern:</small><br>
+                      <strong>{{ pattern.primary_concern }}</strong>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-muted">Loading geographic data...</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-6">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>Age-Based Disease Patterns
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="agePatterns">
+            {% if insights.disease_patterns and insights.disease_patterns.age_patterns %}
+              {% for pattern in insights.disease_patterns.age_patterns %}
+                <div class="age-group-card">
+                  <h6>{{ pattern.age_group }}</h6>
+                  <div class="row">
+                    <div class="col-6">
+                      <div>{{ pattern.total_cases }}</div>
+                      <small>Total Cases</small>
+                    </div>
+                    <div class="col-6">
+                      <div>{{ pattern.primary_concern }}</div>
+                      <small>Primary Concern</small>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-muted">Loading age pattern data...</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ML Model Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card insight-card">
+        <div class="card-header bg-transparent">
+          <h5 class="mb-0">
+            <i class="fas fa-cogs me-2"></i>ML Model Performance & Data Quality
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <h6>Data Quality</h6>
+              <p class="mb-1">Total Patients: <strong id="totalPatients">{{ insights.data_quality.total_patients if insights.data_quality else 0 }}</strong></p>
+              <p class="mb-1">With Dates: <strong id="patientsWithDates">{{ insights.data_quality.patients_with_dates if insights.data_quality else 0 }}</strong></p>
+              <p class="mb-0">With Conditions: <strong id="patientsWithConditions">{{ insights.data_quality.patients_with_conditions if insights.data_quality else 0 }}</strong></p>
+            </div>
+            <div class="col-md-3">
+              <h6>Visit Predictor</h6>
+              <p class="mb-1">Status: <span id="visitPredictorStatus" class="badge bg-success">{{ insights.visit_predictions.model_status if insights.visit_predictions else 'Loading' }}</span></p>
+              <p class="mb-0">Last Updated: <strong id="lastUpdated">{{ insights.last_updated if insights.last_updated else 'Never' }}</strong></p>
+            </div>
+            <div class="col-md-3">
+              <h6>Disease Analyzer</h6>
+              <p class="mb-1">Diseases Tracked: <strong id="diseasesTracked">{{ insights.disease_patterns.total_diseases_tracked if insights.disease_patterns else 0 }}</strong></p>
+              <p class="mb-0">Analysis Date: <strong id="analysisDate">{{ insights.disease_patterns.analysis_date if insights.disease_patterns else 'N/A' }}</strong></p>
+            </div>
+            <div class="col-md-3">
+              <h6>Model Actions</h6>
+              <button id="retrainModels" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-redo me-1"></i>Retrain Models
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Real-time Updates Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Real-time Update</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="updateMessage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let visitTrendsChart, diseaseDistributionChart;
+let refreshInterval;
+
+// Initialize charts and real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    startRealTimeUpdates();
+    
+    // Event listeners
+    document.getElementById('refreshData').addEventListener('click', refreshAllData);
+    document.getElementById('retrainModels').addEventListener('click', retrainModels);
+});
+
+function initializeCharts() {
+    // Visit Trends Chart
+    const visitCtx = document.getElementById('visitTrendsChart').getContext('2d');
+    visitTrendsChart = new Chart(visitCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Historical Visits',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Predictions',
+                data: [],
+                borderColor: '#764ba2',
+                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Patients'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Patient Visit Trends & ML Predictions'
+                }
+            }
+        }
+    });
+
+    // Disease Distribution Chart
+    const diseaseCtx = document.getElementById('diseaseDistributionChart').getContext('2d');
+    diseaseDistributionChart = new Chart(diseaseCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                    '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Disease Distribution'
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Load initial data
+    loadVisitPredictions();
+    loadDiseasePatterns();
+}
+
+function startRealTimeUpdates() {
+    // Update data every 30 seconds
+    refreshInterval = setInterval(() => {
+        refreshAllData();
+    }, 30000);
+}
+
+function refreshAllData() {
+    updateMLStatus('training', 'Updating Data...');
+    loadVisitPredictions();
+    loadDiseasePatterns();
+}
+
+function loadVisitPredictions() {
+    fetch('/api/ml/visit_predictions?days=7')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading visit predictions:', data.error);
+                updateMLStatus('error', 'Error Loading Data');
+                return;
+            }
+            
+            updateVisitPredictions(data);
+            updateMLStatus('active', 'Real-Time ML Active');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            updateMLStatus('error', 'Connection Error');
+        });
+}
+
+function loadDiseasePatterns() {
+    fetch('/api/ml/disease_patterns')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading disease patterns:', data.error);
+                return;
+            }
+            
+            updateDiseasePatterns(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function updateVisitPredictions(data) {
+    // Update next day prediction
+    if (data.predictions && data.predictions.length > 0) {
+        const nextDay = data.predictions[0];
+        document.getElementById('nextDayPrediction').textContent = nextDay.predicted_visits;
+        
+        // Update staffing recommendations
+        const visits = nextDay.predicted_visits;
+        document.getElementById('recommendedDoctors').textContent = Math.max(1, Math.round(visits / 5));
+        document.getElementById('recommendedNurses').textContent = Math.max(1, Math.round(visits / 3));
+        document.getElementById('recommendedAdmin').textContent = Math.max(1, Math.round(visits / 10));
+    }
+    
+    // Update weekly forecast
+    updateWeeklyForecast(data.predictions);
+    
+    // Update trends chart
+    if (data.historical_trends) {
+        const historical = data.historical_trends;
+        const predictions = data.predictions || [];
+        
+        // Combine historical and prediction data
+        const allDates = [...historical.dates];
+        const allData = [...historical.visit_counts];
+        
+        // Add prediction dates and data
+        predictions.forEach(pred => {
+            allDates.push(pred.date);
+        });
+        
+        const predictionData = new Array(historical.dates.length).fill(null);
+        predictions.forEach(pred => {
+            predictionData.push(pred.predicted_visits);
+        });
+        
+        visitTrendsChart.data.labels = allDates;
+        visitTrendsChart.data.datasets[0].data = [...allData, ...new Array(predictions.length).fill(null)];
+        visitTrendsChart.data.datasets[1].data = predictionData;
+        visitTrendsChart.update();
+    }
+}
+
+function updateWeeklyForecast(predictions) {
+    const forecastContainer = document.getElementById('weeklyForecast');
+    forecastContainer.innerHTML = '';
+    
+    if (predictions && predictions.length > 0) {
+        predictions.forEach(pred => {
+            const col = document.createElement('div');
+            col.className = 'col-md-3 col-sm-6 mb-3';
+            
+            const confidenceClass = pred.confidence === 'high' ? 'success' : 'warning';
+            
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6>${pred.day_name}</h6>
+                        <div class="h4 text-primary">${pred.predicted_visits}</div>
+                        <small class="badge bg-${confidenceClass}">${pred.confidence} confidence</small>
+                    </div>
+                </div>
+            `;
+            forecastContainer.appendChild(col);
+        });
+    }
+}
+
+function updateDiseasePatterns(data) {
+    if (data.disease_patterns && data.disease_patterns.disease_insights) {
+        // Update disease insights
+        const insights = data.disease_patterns.disease_insights;
+        updateDiseaseInsightsDisplay(insights);
+        
+        // Update disease distribution chart
+        const diseases = insights.slice(0, 8).map(d => d.disease);
+        const counts = insights.slice(0, 8).map(d => d.total_cases);
+        
+        diseaseDistributionChart.data.labels = diseases;
+        diseaseDistributionChart.data.datasets[0].data = counts;
+        diseaseDistributionChart.update();
+        
+        // Update geographic patterns
+        if (data.disease_patterns.geographic_patterns) {
+            updateGeographicPatterns(data.disease_patterns.geographic_patterns);
+        }
+        
+        // Update age patterns
+        if (data.disease_patterns.age_patterns) {
+            updateAgePatterns(data.disease_patterns.age_patterns);
+        }
+    }
+    
+    // Update statistics
+    document.getElementById('diseasesTracked').textContent = data.disease_patterns.total_diseases_tracked || 0;
+    document.getElementById('analysisDate').textContent = data.disease_patterns.analysis_date || 'N/A';
+}
+
+function updateDiseaseInsightsDisplay(insights) {
+    const container = document.getElementById('diseaseInsights');
+    container.innerHTML = '';
+    
+    insights.slice(0, 5).forEach(disease => {
+        const trendClass = disease.trend === 'Increasing' ? 'trend-up' : 
+                          disease.trend === 'Decreasing' ? 'trend-down' : 'trend-stable';
+        const trendIcon = disease.trend === 'Increasing' ? 'fa-arrow-up' : 
+                         disease.trend === 'Decreasing' ? 'fa-arrow-down' : 'fa-minus';
+        const riskClass = disease.risk_level === 'High' ? 'danger' : 
+                         disease.risk_level === 'Medium' ? 'warning' : 'success';
+        
+        const diseaseCard = document.createElement('div');
+        diseaseCard.className = 'disease-card';
+        diseaseCard.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${disease.disease}</h6>
+                    <small class="text-muted">${disease.total_cases} cases • ${disease.prevalence_rate}% prevalence</small>
+                </div>
+                <div class="trend-indicator">
+                    <span class="${trendClass}"><i class="fas ${trendIcon}"></i></span>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="badge bg-${riskClass}">${disease.risk_level} Risk</span>
+            </div>
+        `;
+        container.appendChild(diseaseCard);
+    });
+}
+
+function updateGeographicPatterns(patterns) {
+    const container = document.getElementById('geographicPatterns');
+    container.innerHTML = '';
+    
+    patterns.slice(0, 5).forEach(pattern => {
+        const patternDiv = document.createElement('div');
+        patternDiv.className = 'geographic-pattern';
+        patternDiv.innerHTML = `
+            <h6>${pattern.locality}</h6>
+            <div class="row">
+                <div class="col-6">
+                    <small class="text-muted">Total Cases:</small><br>
+                    <strong>${pattern.total_cases}</strong>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Primary Concern:</small><br>
+                    <strong>${pattern.primary_concern}</strong>
+                </div>
+            </div>
+        `;
+        container.appendChild(patternDiv);
+    });
+}
+
+function updateAgePatterns(patterns) {
+    const container = document.getElementById('agePatterns');
+    container.innerHTML = '';
+    
+    patterns.forEach(pattern => {
+        const ageCard = document.createElement('div');
+        ageCard.className = 'age-group-card';
+        ageCard.innerHTML = `
+            <h6>${pattern.age_group}</h6>
+            <div class="row">
+                <div class="col-6">
+                    <div>${pattern.total_cases}</div>
+                    <small>Total Cases</small>
+                </div>
+                <div class="col-6">
+                    <div>${pattern.primary_concern}</div>
+                    <small>Primary Concern</small>
+                </div>
+            </div>
+        `;
+        container.appendChild(ageCard);
+    });
+}
+
+function updateMLStatus(status, message) {
+    const statusElement = document.getElementById('mlStatus');
+    statusElement.className = `ml-status ${status}`;
+    statusElement.innerHTML = `<span class="real-time-indicator"></span>${message}`;
+}
+
+function retrainModels() {
+    updateMLStatus('training', 'Retraining Models...');
+    
+    fetch('/api/ml/retrain_models', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                updateMLStatus('error', 'Training Failed');
+                showUpdateModal('Training Error', data.error);
+                return;
+            }
+            
+            updateMLStatus('active', 'Models Retrained');
+            showUpdateModal('Success', 'ML models have been successfully retrained with the latest data.');
+            
+            // Refresh data after retraining
+            setTimeout(refreshAllData, 2000);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            updateMLStatus('error', 'Training Failed');
+            showUpdateModal('Error', 'Failed to retrain models. Please try again.');
+        });
+}
+
+function showUpdateModal(title, message) {
+    document.querySelector('#updateModal .modal-title').textContent = title;
+    document.getElementById('updateMessage').textContent = message;
+    new bootstrap.Modal(document.getElementById('updateModal')).show();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %}

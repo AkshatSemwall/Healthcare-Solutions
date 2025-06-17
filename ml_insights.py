@@ -1,7 +1,7 @@
 from flask import render_template, jsonify, request
 from app import app
 from utils import load_patients_from_csv
-from ml_models import RealTimeMLEngine
+from enhanced_ml_models import ComprehensiveMLEngine
 from datetime import datetime, timedelta
 import logging
 
@@ -11,13 +11,13 @@ def ml_insights():
     try:
         patients = load_patients_from_csv()
         
-        # Initialize ML engine
-        ml_engine = RealTimeMLEngine()
+        # Initialize enhanced ML engine
+        ml_engine = ComprehensiveMLEngine()
         
-        # Generate comprehensive ML insights
+        # Generate comprehensive ML insights using real patient data
         insights = ml_engine.generate_comprehensive_insights(patients)
         
-        return render_template('ml_insights.html', insights=insights)
+        return render_template('ml_insights_enhanced.html', insights=insights)
     except Exception as e:
         logging.error(f"Error loading ML insights: {e}")
         return render_template('error.html', error="Error loading ML insights")
@@ -27,23 +27,23 @@ def api_visit_predictions():
     """API endpoint for real-time visit predictions"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = RealTimeMLEngine()
+        ml_engine = ComprehensiveMLEngine()
         
         days_ahead = request.args.get('days', 7, type=int)
         
-        # Train model if needed
-        if ml_engine.should_retrain():
-            training_result = ml_engine.train_models(patients)
-            logging.info(f"Model retrained: {training_result}")
+        # Generate comprehensive insights
+        insights = ml_engine.generate_comprehensive_insights(patients)
+        visit_patterns = insights.get('visit_patterns', {})
         
-        predictions = ml_engine.visit_predictor.predict_next_days(days_ahead)
-        historical = ml_engine.visit_predictor.get_historical_trends(patients, 30)
+        predictions = visit_patterns.get('daily_predictions', [])[:days_ahead]
+        historical = visit_patterns.get('temporal_patterns', {})
         
         return jsonify({
             'predictions': predictions,
             'historical_trends': historical,
             'last_updated': datetime.now().isoformat(),
-            'model_status': 'active' if ml_engine.visit_predictor.is_trained else 'training_needed'
+            'model_status': 'active',
+            'data_quality': insights.get('data_summary', {}).get('data_quality_score', 0)
         })
     except Exception as e:
         logging.error(f"Error in visit predictions API: {e}")
@@ -54,14 +54,16 @@ def api_disease_patterns():
     """API endpoint for real-time disease pattern analysis"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = RealTimeMLEngine()
+        ml_engine = ComprehensiveMLEngine()
         
-        patterns = ml_engine.disease_analyzer.analyze_disease_patterns(patients)
+        insights = ml_engine.generate_comprehensive_insights(patients)
+        disease_patterns = insights.get('disease_patterns', {})
         
         return jsonify({
-            'disease_patterns': patterns,
+            'disease_patterns': disease_patterns,
             'last_updated': datetime.now().isoformat(),
-            'data_points': len(patients)
+            'data_points': len(patients),
+            'data_quality': insights.get('data_summary', {}).get('data_quality_score', 0)
         })
     except Exception as e:
         logging.error(f"Error in disease patterns API: {e}")
@@ -69,20 +71,28 @@ def api_disease_patterns():
 
 @app.route('/api/ml/retrain_models', methods=['POST'])
 def api_retrain_models():
-    """API endpoint to manually trigger model retraining"""
+    """API endpoint to manually trigger comprehensive analysis update"""
     try:
         patients = load_patients_from_csv()
-        ml_engine = RealTimeMLEngine()
+        ml_engine = ComprehensiveMLEngine()
         
-        training_results = ml_engine.train_models(patients)
+        # Generate fresh comprehensive insights
+        insights = ml_engine.generate_comprehensive_insights(patients)
         
         return jsonify({
-            'training_results': training_results,
-            'retrained_at': datetime.now().isoformat(),
-            'data_points': len(patients)
+            'status': 'success',
+            'message': 'ML analysis updated successfully',
+            'updated_at': datetime.now().isoformat(),
+            'data_points': len(patients),
+            'data_quality_score': insights.get('data_summary', {}).get('data_quality_score', 0),
+            'insights_summary': {
+                'visit_predictions': len(insights.get('visit_patterns', {}).get('daily_predictions', [])),
+                'disease_categories': len(insights.get('disease_patterns', {}).get('categorized_diseases', {})),
+                'geographic_patterns': len(insights.get('disease_patterns', {}).get('geographic_patterns', []))
+            }
         })
     except Exception as e:
-        logging.error(f"Error retraining models: {e}")
+        logging.error(f"Error updating ML analysis: {e}")
         return jsonify({'error': str(e)}), 500
 
 def generate_ml_insights(patients):

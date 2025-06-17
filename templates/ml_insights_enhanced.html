@@ -186,8 +186,8 @@
             <i class="fas fa-calendar-day me-2"></i>Tomorrow's Predicted Visits
           </h5>
           <div id="nextDayPrediction" class="prediction-number">
-            {% if insights.visit_predictions and insights.visit_predictions.next_day %}
-              {{ insights.visit_predictions.next_day.predicted_visits }}
+            {% if insights.visit_patterns and insights.visit_patterns.daily_predictions %}
+              {{ insights.visit_patterns.daily_predictions[0].predicted_visits if insights.visit_patterns.daily_predictions else 'Loading...' }}
             {% else %}
               Loading...
             {% endif %}

@@ -44,7 +44,8 @@ class PatientVisitPredictor:
         # Season encoding (0=Winter, 1=Spring, 2=Summer, 3=Fall)
         df['season'] = ((df['month'] % 12) // 3)
         
-        return df[self.feature_columns].copy()
+        feature_df = df[self.feature_columns]
+        return pd.DataFrame(feature_df)
     
     def train(self, patients: List[Patient]) -> Dict[str, Any]:
         """Train the visit prediction model using historical patient data"""

@@ -194,8 +194,59 @@
     }
     
     .chart-container {
-      height: 250px;
+      height: 200px;
     }
+    
+    .container-fluid {
+      padding: 0.1rem;
+    }
+  }
+  
+  /* User Feedback System */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+  }
+  
+  .user-feedback {
+    background: rgba(102, 126, 234, 0.95);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 0.5rem;
+    animation: slideIn 0.3s ease;
+  }
+  
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  
+  /* Interactive Elements */
+  .interactive-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .interactive-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  
+  /* Compact Data Tables */
+  .data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.85rem;
+  }
+  
+  .data-row:last-child {
+    border-bottom: none;
   }
   
   /* Data Quality Indicator */
@@ -223,6 +274,9 @@
 {% endblock %}
 
 {% block content %}
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toastContainer"></div>
+
 <!-- Status Indicator -->
 <div id="statusIndicator" class="status-indicator status-active">
   <span class="update-pulse"></span>
@@ -726,6 +780,7 @@ function refreshAllData() {
         });
         
         updateStatus('active', 'Data Updated Successfully');
+        showUserFeedback('Data refreshed successfully!', 'success');
         
         // Show success message briefly
         setTimeout(() => {
@@ -735,6 +790,7 @@ function refreshAllData() {
         refreshBtn.innerHTML = originalText;
         refreshBtn.disabled = false;
         updateStatus('error', 'Update Failed');
+        showUserFeedback('Failed to refresh data. Please try again.', 'error');
         console.error('Refresh failed:', error);
     });
 }
@@ -826,11 +882,52 @@ function updateStatus(status, message) {
     indicator.innerHTML = `<span class="update-pulse"></span>${message}`;
 }
 
+// User feedback notification system
+function showUserFeedback(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'user-feedback';
+    
+    // Set background color based on type
+    const colors = {
+        success: 'linear-gradient(45deg, #2ed573, #1dd1a1)',
+        error: 'linear-gradient(45deg, #ff4757, #ff3742)',
+        info: 'linear-gradient(45deg, #667eea, #764ba2)',
+        warning: 'linear-gradient(45deg, #ffa726, #ff9800)'
+    };
+    
+    toast.style.background = colors[type] || colors.info;
+    toast.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span>${message}</span>
+            <button class="btn btn-sm btn-link text-white p-0 ms-2" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 4000);
+}
+
 // Auto-refresh when page becomes visible
 document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         refreshAllData();
     }
+});
+
+// Initialize dashboard with welcome message
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        showUserFeedback('Real-time ML dashboard loaded successfully!', 'success');
+    }, 1000);
 });
 </script>
 {% endblock %}

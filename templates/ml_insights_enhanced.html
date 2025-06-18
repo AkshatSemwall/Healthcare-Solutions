@@ -265,21 +265,6 @@
         </div>
       </div>
     </div>
-    <div class="col-lg-6">
-      <div class="card insight-card">
-        <div class="card-header bg-transparent">
-          <h5 class="mb-0">
-            <i class="fas fa-chart-pie me-2"></i>Disease Distribution
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="diseaseDistributionChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
   <!-- Geographic Patterns -->
   <div class="row mb-4">
     <div class="col-lg-6">
@@ -313,40 +298,39 @@
           </div>
         </div>
       </div>
+    </div><div class="col-lg-6">
+  <div class="card insight-card">
+    <div class="card-header bg-transparent">
+      <h5 class="mb-0">
+        <i class="fas fa-users me-2"></i>Age-Based Disease Patterns
+      </h5>
     </div>
-    <div class="col-lg-6">
-      <div class="card insight-card">
-        <div class="card-header bg-transparent">
-          <h5 class="mb-0">
-            <i class="fas fa-users me-2"></i>Age-Based Disease Patterns
-          </h5>
-        </div>
-        <div class="card-body">
-          <div id="agePatterns">
-            {% if insights.disease_patterns and insights.disease_patterns.age_patterns %}
-              {% for pattern in insights.disease_patterns.age_patterns %}
-                <div class="age-group-card">
-                  <h6>{{ pattern.age_group }}</h6>
-                  <div class="row">
-                    <div class="col-6">
-                      <div>{{ pattern.total_cases }}</div>
-                      <small>Total Cases</small>
-                    </div>
-                    <div class="col-6">
-                      <div>{{ pattern.primary_concern }}</div>
-                      <small>Primary Concern</small>
-                    </div>
-                  </div>
+    <div class="card-body">
+      <div id="agePatterns">
+        {% if insights.disease_patterns and insights.disease_patterns.age_patterns %}
+          {% for pattern in insights.disease_patterns.age_patterns %}
+            <div class="age-group-card mb-3 p-2 border rounded">
+              <h6>{{ pattern.age_group }}</h6>
+              <div class="row">
+                <div class="col-6">
+                  <div>{{ pattern.total_cases }}</div>
+                  <small>Total Cases</small>
                 </div>
-              {% endfor %}
-            {% else %}
-              <p class="text-muted">Loading age pattern data...</p>
-            {% endif %}
-          </div>
-        </div>
+                <div class="col-6">
+                  <div>{{ pattern.primary_concern }}</div>
+                  <small>Primary Concern</small>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Loading age pattern data...</p>
+        {% endif %}
       </div>
     </div>
   </div>
+</div>
+
   <!-- ML Model Information -->
   <div class="row mb-4">
     <div class="col-12">

@@ -4,6 +4,12 @@ from utils import load_patients_from_csv
 from optimized_ml_engine import OptimizedMLEngine
 from datetime import datetime, timedelta
 import logging
+from collections import Counter
+import random
+from flask import send_file
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import io
 
 @app.route('/ml_insights')
 def ml_insights():
@@ -15,7 +21,7 @@ def ml_insights():
         ml_engine = OptimizedMLEngine()
         
         # Generate comprehensive ML insights using real patient data
-        insights = ml_engine.generate_insights(patients)
+        insights = ml_engine.generate_insights(patients)    
         
         return render_template('ml_insights_optimized.html', insights=insights)
     except Exception as e:
@@ -210,14 +216,17 @@ def reports_dashboard():
     """Comprehensive reports dashboard"""
     try:
         patients = load_patients_from_csv()
-        
-        # Generate comprehensive report data
+        print(f"[DEBUG] Loaded {len(patients)} patients")  # 👈 Debug line
+
         report = generate_comprehensive_report(patients)
-        
+        print("[DEBUG] Generated report keys:", report.keys())  # 👈 Debug line
+        print("[DEBUG] Sample data from report:", report.get('total_patients'))  # Optional
+
         return render_template('reports_dashboard.html', report=report)
     except Exception as e:
         logging.error(f"Error loading reports dashboard: {e}")
         return render_template('error.html', error="Error loading reports dashboard")
+
 
 def generate_comprehensive_report(patients):
     """Generate comprehensive hospital report"""
@@ -271,7 +280,6 @@ def generate_comprehensive_report(patients):
         'financial_forecast': financial_forecast,
         'generated_at': datetime.now().strftime("%B %d, %Y at %I:%M %p")
     }
-
 def generate_ml_predictions(patients):
     """Generate ML predictions for reports"""
     # Simple prediction based on recent trends

@@ -103,31 +103,37 @@ class PatientVisitPredictor:
         }
     
     def predict_next_days(self, days_ahead: int = 7) -> List[Dict[str, Any]]:
-        """Predict patient visits for the next N days"""
-        if not self.is_trained:
-            return []
-        
-        predictions = []
-        today = datetime.now()
-        
-        for i in range(1, days_ahead + 1):
-            future_date = today + timedelta(days=i)
-            date_str = future_date.strftime('%Y-%m-%d')
-            
-            # Prepare features for this date
-            X = self.prepare_features([date_str])
-            
-            # Make prediction
-            predicted_visits = max(1, int(round(self.model.predict(X)[0])))
-            
-            predictions.append({
-                'date': date_str,
-                'day_name': future_date.strftime('%A'),
-                'predicted_visits': predicted_visits,
-                'confidence': 'high' if future_date.weekday() < 5 else 'medium'  # Weekdays vs weekends
-            })
-        
-        return predictions
+    if not self.is_trained:
+        print("[WARN] Model not trained. Returning empty prediction list.")
+        return []
+
+    predictions = []
+    today = datetime.now()
+
+    for i in range(1, days_ahead + 1):
+        future_date = today + timedelta(days=i)
+        date_str = future_date.strftime('%Y-%m-%d')
+
+        # Prepare input features for prediction
+        X = self.prepare_features([date_str])
+        if X.empty:
+            print(f"[ERROR] Empty feature set for {date_str}")
+            continue
+
+        # Predict and log the result
+        predicted_raw = self.model.predict(X)
+        predicted_visits = max(1, int(round(predicted_raw[0])))
+        print(f"[DEBUG] {date_str} ({future_date.strftime('%A')}): Predicted = {predicted_visits} (Raw = {predicted_raw[0]})")
+
+        predictions.append({
+            'date': date_str,
+            'day_name': future_date.strftime('%A'),
+            'predicted_visits': predicted_visits,
+            'confidence': 'high' if future_date.weekday() < 5 else 'medium'
+        })
+
+    return predictions
+
     
     def get_historical_trends(self, patients: List[Patient], days: int = 30) -> Dict[str, Any]:
         """Get historical visit trends for visualization"""
